@@ -13,16 +13,20 @@ from game.app.application.inn_service import InnService
 from game.app.application.item_use_service import ItemUseService
 from game.app.application.skill_learning_service import LearnableSkill, SkillLearningService
 from game.app.application.dialogue_event_service import DialogueService, LocationEventService
+from game.app.application.endgame_repeatable_order_service import EndgameRepeatableOrderService, EndgameRepeatableOrderState
 from game.app.application.facility_progression_service import FacilityProgressContext, FacilityProgressService
 from game.app.application.reward_services import RewardApplicationService
 from game.app.application.workshop_progress_service import WorkshopProgressService, WorkshopProgressState
+from game.app.application.workshop_special_chain_service import WorkshopSpecialChainService, WorkshopSpecialChainState
 from game.app.application.workshop_story_service import WorkshopStoryService, WorkshopStoryState
 from game.app.infrastructure.dialogue_event_repository import DialogueEventMasterDataRepository
+from game.app.infrastructure.endgame_repeatable_order_repository import EndgameRepeatableOrderMasterDataRepository
 from game.app.infrastructure.equipment_salvage_repository import EquipmentSalvageMasterDataRepository
 from game.app.infrastructure.equipment_upgrade_repository import EquipmentUpgradeMasterDataRepository
 from game.app.infrastructure.facility_master_data_repository import FacilityMasterDataRepository
 from game.app.infrastructure.master_data_repository import AppMasterDataRepository
 from game.app.infrastructure.workshop_order_repository import WorkshopOrderMasterDataRepository
+from game.app.infrastructure.workshop_special_chain_repository import WorkshopSpecialChainMasterDataRepository
 from game.app.infrastructure.workshop_story_repository import WorkshopStoryMasterDataRepository
 from game.crafting.domain.entities import CraftingRecipeDefinition
 from game.crafting.domain.services import CraftingService, RecipeDiscoveryService, RecipeUnlockService
@@ -71,11 +75,13 @@ class PlayableSliceApplication:
         self._quest_repo = QuestMasterDataRepository(master_root)
         self._app_master_repo = AppMasterDataRepository(master_root)
         self._dialogue_event_repo = DialogueEventMasterDataRepository(master_root)
+        self._endgame_order_repo = EndgameRepeatableOrderMasterDataRepository(master_root)
         self._equipment_salvage_repo = EquipmentSalvageMasterDataRepository(master_root)
         self._equipment_upgrade_repo = EquipmentUpgradeMasterDataRepository(master_root)
         self._facility_repo = FacilityMasterDataRepository(master_root)
         self._workshop_order_repo = WorkshopOrderMasterDataRepository(master_root)
         self._workshop_story_repo = WorkshopStoryMasterDataRepository(master_root)
+        self._workshop_special_chain_repo = WorkshopSpecialChainMasterDataRepository(master_root)
         self._crafting_repo = CraftingMasterDataRepository(master_root)
         self._gathering_repo = GatheringNodeMasterDataRepository(master_root)
         self._treasure_repo = TreasureMasterDataRepository(master_root)
@@ -180,6 +186,8 @@ class PlayableSliceApplication:
         self._location_event_service = LocationEventService(self._dialogue_event_repo.load_location_events())
         self._field_event_service = FieldEventService(self._field_event_repo.load_events())
         self._workshop_story_service = WorkshopStoryService()
+        self._workshop_special_chain_service = WorkshopSpecialChainService()
+        self._endgame_order_service = EndgameRepeatableOrderService()
         self._workshop_story_definitions = self._workshop_story_repo.load(
             valid_npc_ids=set(self._dialogue_service.npc_definitions),
             valid_quest_ids=set(self._quest_board_service.definitions),
@@ -187,6 +195,9 @@ class PlayableSliceApplication:
             valid_location_ids=set(self._location_definitions),
             valid_field_event_ids=set(self._field_event_service.definitions),
         )
+
+        self._workshop_special_chain_definitions = self._workshop_special_chain_repo.load()
+        self._endgame_order_definitions = self._endgame_order_repo.load()
 
         self.quest_session: QuestSliceSession | None = None
         self.party_members: list[PartyMemberState] = []
@@ -208,7 +219,9 @@ class PlayableSliceApplication:
         self.turn_in_completion_count: int = 0
         self.workshop_progress_state = WorkshopProgressState()
         self.workshop_story_state = WorkshopStoryState()
+        self.workshop_special_chain_state = WorkshopSpecialChainState()
         self.workshop_order_completion_counts: dict[str, int] = {}
+        self.endgame_order_state = EndgameRepeatableOrderState()
         self.active_set_bonus_keys_by_member: dict[str, set[str]] = {}
         self.location_state = LocationState(current_location_id=HUB_LOCATION_ID, unlocked_location_ids={HUB_LOCATION_ID})
 
@@ -242,7 +255,9 @@ class PlayableSliceApplication:
         self.turn_in_completion_count = 0
         self.workshop_progress_state = WorkshopProgressState()
         self.workshop_story_state = WorkshopStoryState()
+        self.workshop_special_chain_state = WorkshopSpecialChainState()
         self.workshop_order_completion_counts = {}
+        self.endgame_order_state = EndgameRepeatableOrderState()
         self.equipment_upgrade_levels = {}
         self.active_set_bonus_keys_by_member = {}
         self._travel_service.evaluate_unlocks(self.location_state, self.quest_session.world_flags)
@@ -321,10 +336,29 @@ class PlayableSliceApplication:
             unlocked_location_ids=set(workshop_story_meta.get("unlocked_location_ids", [])),
             unlocked_field_event_ids=set(workshop_story_meta.get("unlocked_field_event_ids", [])),
         )
+        special_chain_meta = save_data.meta.get("workshop_special_chain_state", {})
+        self.workshop_special_chain_state = WorkshopSpecialChainState(
+            unlocked_chain_ids=set(special_chain_meta.get("unlocked_chain_ids", [])),
+            active_chain_id=special_chain_meta.get("active_chain_id"),
+            active_stage_id=special_chain_meta.get("active_stage_id"),
+            completed_stage_ids=set(special_chain_meta.get("completed_stage_ids", [])),
+            completed_chain_ids=set(special_chain_meta.get("completed_chain_ids", [])),
+            rewarded_chain_ids=set(special_chain_meta.get("rewarded_chain_ids", [])),
+        )
         self.workshop_order_completion_counts = {
             str(order_id): int(count)
             for order_id, count in workshop_meta.get("order_completion_counts", {}).items()
         }
+        endgame_meta = save_data.meta.get("endgame_repeatable_order_state", {})
+        self.endgame_order_state = EndgameRepeatableOrderState(
+            unlocked_order_ids=set(endgame_meta.get("unlocked_order_ids", [])),
+            active_order_id=endgame_meta.get("active_order_id"),
+            completed_order_ids_in_cycle=set(endgame_meta.get("completed_order_ids_in_cycle", [])),
+            objective_progress={str(k): int(v) for k, v in endgame_meta.get("objective_progress", {}).items()},
+            completion_counts={str(k): int(v) for k, v in endgame_meta.get("completion_counts", {}).items()},
+            rewarded_cycle_ids=set(endgame_meta.get("rewarded_cycle_ids", [])),
+            ready_to_reaccept_order_ids=set(endgame_meta.get("ready_to_reaccept_order_ids", [])),
+        )
         equipment_meta = save_data.meta.get("equipment_state", {})
         self.equipment_upgrade_levels = {
             str(equipment_id): int(level)
@@ -590,6 +624,23 @@ class PlayableSliceApplication:
                     "unlocked_location_ids": sorted(self.workshop_story_state.unlocked_location_ids),
                     "unlocked_field_event_ids": sorted(self.workshop_story_state.unlocked_field_event_ids),
                 },
+                "workshop_special_chain_state": {
+                    "unlocked_chain_ids": sorted(self.workshop_special_chain_state.unlocked_chain_ids),
+                    "active_chain_id": self.workshop_special_chain_state.active_chain_id,
+                    "active_stage_id": self.workshop_special_chain_state.active_stage_id,
+                    "completed_stage_ids": sorted(self.workshop_special_chain_state.completed_stage_ids),
+                    "completed_chain_ids": sorted(self.workshop_special_chain_state.completed_chain_ids),
+                    "rewarded_chain_ids": sorted(self.workshop_special_chain_state.rewarded_chain_ids),
+                },
+                "endgame_repeatable_order_state": {
+                    "unlocked_order_ids": sorted(self.endgame_order_state.unlocked_order_ids),
+                    "active_order_id": self.endgame_order_state.active_order_id,
+                    "completed_order_ids_in_cycle": sorted(self.endgame_order_state.completed_order_ids_in_cycle),
+                    "objective_progress": dict(sorted(self.endgame_order_state.objective_progress.items())),
+                    "completion_counts": dict(sorted(self.endgame_order_state.completion_counts.items())),
+                    "rewarded_cycle_ids": sorted(self.endgame_order_state.rewarded_cycle_ids),
+                    "ready_to_reaccept_order_ids": sorted(self.endgame_order_state.ready_to_reaccept_order_ids),
+                },
             },
         )
         self._save_repo.save(save_data)
@@ -613,6 +664,7 @@ class PlayableSliceApplication:
         if location_id == HUB_LOCATION_ID and previous_location_id != HUB_LOCATION_ID:
             lines.extend(self._apply_gathering_respawn("on_return_to_hub"))
             lines.extend(self._apply_repeatable_quest_updates("on_return_to_hub"))
+            lines.extend(self._mark_endgame_orders_reaccept_ready("on_return_to_hub"))
         lines.extend(self._run_on_enter_location_events(location_id))
         return lines
 
@@ -929,9 +981,72 @@ class PlayableSliceApplication:
             lines.extend(self.workshop_salvage_guidance_lines())
             lines.extend(self.workshop_recipe_lines(npc_id))
             lines.extend(self.workshop_progress_lines())
+            lines.extend(self._advance_workshop_special_chain())
+            lines.extend(self._update_endgame_repeatable_orders())
+            lines.extend(self.endgame_repeatable_order_lines())
             lines.extend(self.workshop_equipment_upgrade_lines())
             lines.extend(self.workshop_equipment_salvage_lines())
         return lines
+
+    def _mark_endgame_orders_reaccept_ready(self, repeat_reset_rule: str) -> list[str]:
+        return self._endgame_order_service.mark_ready_to_reaccept(
+            state=self.endgame_order_state,
+            repeat_reset_rule=repeat_reset_rule,
+        )
+
+    def endgame_repeatable_order_lines(self) -> list[str]:
+        lines: list[str] = []
+        for order in self._endgame_order_definitions:
+            unlocked = order.order_id in self.endgame_order_state.unlocked_order_ids
+            active = self.endgame_order_state.active_order_id == order.order_id
+            ready = order.order_id in self.endgame_order_state.ready_to_reaccept_order_ids
+            lines.append(
+                f"endgame_order:{order.order_id}:unlocked={unlocked}:active={active}:ready_to_reaccept={ready}:completed={self.endgame_order_state.completion_counts.get(order.order_id, 0)}"
+            )
+        return lines
+
+    def _update_endgame_repeatable_orders(self) -> list[str]:
+        if self.quest_session is None:
+            return []
+        logs = self._endgame_order_service.unlock_available(
+            state=self.endgame_order_state,
+            definitions=self._endgame_order_definitions,
+            workshop_level=self.workshop_progress_state.level,
+            world_flags=self.quest_session.world_flags,
+        )
+        if self.endgame_order_state.active_order_id is None:
+            for order in self._endgame_order_definitions:
+                if order.order_id in self.endgame_order_state.unlocked_order_ids:
+                    logs.extend(self._endgame_order_service.start(state=self.endgame_order_state, order=order))
+                    break
+        active_id = self.endgame_order_state.active_order_id
+        if not active_id:
+            return logs
+        order = next((o for o in self._endgame_order_definitions if o.order_id == active_id), None)
+        if order is None:
+            return logs + [f"endgame_order_failed:unknown_order:{active_id}"]
+        for obj in order.objectives:
+            clear = False
+            req = obj.requirements
+            if obj.objective_type == "defeat_miniboss":
+                clear = req.get("miniboss_id") in self.defeated_miniboss_ids
+            elif obj.objective_type == "craft_equipment":
+                clear = self.inventory_state.get("items", {}).get(req.get("equipment_id", ""), 0) > 0
+            elif obj.objective_type == "upgrade_equipment":
+                clear = self.equipment_upgrade_levels.get(req.get("equipment_id", ""), 0) >= int(req.get("min_level", "1"))
+            elif obj.objective_type == "activate_set_bonus":
+                active_bonus_keys = set().union(*self.active_set_bonus_keys_by_member.values()) if self.active_set_bonus_keys_by_member else set()
+                clear = req.get("set_bonus_id", "") in active_bonus_keys
+            logs.extend(self._endgame_order_service.update_objective(state=self.endgame_order_state, order=order, objective_id=obj.objective_id, completed=clear))
+        if self._endgame_order_service.is_all_objectives_completed(state=self.endgame_order_state, order=order):
+            logs.extend(self._endgame_order_service.complete(state=self.endgame_order_state, order=order))
+            if order.order_id not in self.endgame_order_state.rewarded_cycle_ids:
+                self.endgame_order_state.rewarded_cycle_ids.add(order.order_id)
+                for item_id, amount in order.rewards.items():
+                    self.inventory_state.setdefault("items", {})
+                    self.inventory_state["items"][item_id] = self.inventory_state["items"].get(item_id, 0) + amount
+                    logs.append(f"endgame_order_reward:{order.order_id}:{item_id}:x{amount}")
+        return logs
 
     def _advance_workshop_story(self, npc_id: str) -> list[str]:
         if self.quest_session is None:
@@ -960,6 +1075,46 @@ class PlayableSliceApplication:
                     lines.append(f"recipe_unlocked:workshop_story:{recipe_id}")
         lines.extend(self._evaluate_recipe_unlocks())
         return lines
+
+    def _advance_workshop_special_chain(self) -> list[str]:
+        if self.quest_session is None:
+            return []
+        logs = self._workshop_special_chain_service.unlock_available(
+            state=self.workshop_special_chain_state,
+            definitions=self._workshop_special_chain_definitions,
+            workshop_level=self.workshop_progress_state.level,
+            world_flags=self.quest_session.world_flags,
+        )
+        active_id = self.workshop_special_chain_state.active_chain_id
+        if not active_id:
+            return logs
+        chain = next((c for c in self._workshop_special_chain_definitions if c.chain_id == active_id), None)
+        if chain is None:
+            return logs + [f"special_chain_failed:unknown_chain:{active_id}"]
+        stage_id = self.workshop_special_chain_state.active_stage_id
+        stage = next((s for s in chain.stages if s.stage_id == stage_id), None) if stage_id else None
+        if stage is None:
+            return logs
+        req = stage.requirements
+        clear = False
+        if stage.stage_type == "defeat_miniboss":
+            clear = req.get("miniboss_id") in self.defeated_miniboss_ids
+        elif stage.stage_type == "craft_equipment":
+            clear = self.inventory_state.get("items", {}).get(req.get("equipment_id", ""), 0) > 0
+        elif stage.stage_type == "upgrade_equipment":
+            clear = self.equipment_upgrade_levels.get(req.get("equipment_id", ""), 0) >= int(req.get("min_level", "1"))
+        elif stage.stage_type == "turn_in_items":
+            clear = req.get("required_flag") in self.quest_session.world_flags
+        logs.extend(self._workshop_special_chain_service.advance(state=self.workshop_special_chain_state, chain=chain, stage_clear=clear))
+        for line in logs:
+            if line.startswith("special_chain_final_reward:"):
+                reward = line.split(":", 3)[-1]
+                if reward.startswith("recipe."):
+                    self.unlocked_recipe_ids.add(reward)
+                    self.discovered_recipe_ids.add(reward)
+                if reward.startswith("flag."):
+                    self.quest_session.world_flags.add(reward)
+        return logs
 
     def _run_dialogue_choice_effect(self, action_type: str, params: dict[str, str]) -> list[str]:
         if self.quest_session is None:

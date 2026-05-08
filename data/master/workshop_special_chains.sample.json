@@ -1,0 +1,39 @@
+[
+  {
+    "chain_id": "chain.workshop.rank3.tidebreaker_legacy",
+    "name": "潮断の遺産計画",
+    "description": "工房ランク3到達後に解放される準エンドゲーム特別依頼チェーン。",
+    "required_workshop_level": 3,
+    "unlock_flags": ["flag.workshop.story.rank3.order_completed"],
+    "stages": [
+      {
+        "stage_id": "stage.defeat_guardian",
+        "stage_type": "defeat_miniboss",
+        "description": "潮祠の守護者を討伐して核を確保する。",
+        "requirements": {"miniboss_id": "miniboss.ch01.tidal_flats.shrine_guardian"}
+      },
+      {
+        "stage_id": "stage.craft_harness",
+        "stage_type": "craft_equipment",
+        "description": "潮断ハーネスを作成する。",
+        "requirements": {"equipment_id": "equip.armor.tidebreaker_harness"}
+      },
+      {
+        "stage_id": "stage.upgrade_harness",
+        "stage_type": "upgrade_equipment",
+        "description": "潮断ハーネスを1段階以上強化する。",
+        "requirements": {"equipment_id": "equip.armor.tidebreaker_harness", "min_level": "1"}
+      },
+      {
+        "stage_id": "stage.report_master",
+        "stage_type": "turn_in_items",
+        "description": "工房マスターへ報告する。",
+        "requirements": {"required_flag": "flag.workshop.rank.3_blueprint_seen"}
+      }
+    ],
+    "final_rewards": [
+      "recipe.craft.workshop_oceanic_polish",
+      "flag.workshop.special_chain.rank3.completed"
+    ]
+  }
+]

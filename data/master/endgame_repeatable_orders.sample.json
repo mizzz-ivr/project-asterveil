@@ -1,0 +1,42 @@
+[
+  {
+    "order_id": "order.endgame.tidebreaker_rearm",
+    "name": "潮断再鍛計画",
+    "description": "特別依頼チェーン完了後に解放される周回型高難度依頼。",
+    "required_unlock_flags": ["flag.workshop.special_chain.rank3.completed"],
+    "required_workshop_level": 3,
+    "repeatable": true,
+    "repeat_reset_rule": "on_return_to_hub",
+    "reward_category": "upgrade_resource",
+    "objectives": [
+      {
+        "objective_id": "obj.defeat_guardian_again",
+        "objective_type": "defeat_miniboss",
+        "description": "潮祠の守護者を再討伐する。",
+        "requirements": {"miniboss_id": "miniboss.ch01.tidal_flats.shrine_guardian"}
+      },
+      {
+        "objective_id": "obj.craft_tidebreaker_harness",
+        "objective_type": "craft_equipment",
+        "description": "潮断ハーネスを再作成する。",
+        "requirements": {"equipment_id": "equip.armor.tidebreaker_harness"}
+      },
+      {
+        "objective_id": "obj.upgrade_tidebreaker_harness",
+        "objective_type": "upgrade_equipment",
+        "description": "潮断ハーネスを2段階以上に強化する。",
+        "requirements": {"equipment_id": "equip.armor.tidebreaker_harness", "min_level": "2"}
+      },
+      {
+        "objective_id": "obj.activate_tidebreaker_set",
+        "objective_type": "activate_set_bonus",
+        "description": "潮断セット効果を発動させる。",
+        "requirements": {"set_bonus_id": "set_bonus.tidebreaker.2"}
+      }
+    ],
+    "rewards": {
+      "item.material.miniboss.guardian_core": 2,
+      "item.material.relic.deepsea_thread": 2
+    }
+  }
+]
