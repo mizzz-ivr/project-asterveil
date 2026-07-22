@@ -17,28 +17,18 @@ from game.app.presentation.menu_view_model import (
     SteamDemoMenuPresenter,
     SteamDemoMenuViewModel,
 )
+from game.app.presentation.quest_travel_screen import (
+    QuestBoardScreenController,
+    QuestBoardScreenViewModel,
+    TravelScreenController,
+    TravelScreenViewModel,
+)
 
 
 DEFAULT_FLOW_ID = "demo.steam.ch01.core_loop"
 MASTER_ROOT = Path("data/master")
 
 CLIFlowHandler = Callable[[PlayableSliceApplication], list[str]]
-
-_CLI_FLOW_HANDLERS: dict[SteamDemoFlowId, CLIFlowHandler] = {
-    SteamDemoFlowId.USE_ITEM: base_cli._run_use_item_flow,
-    SteamDemoFlowId.EQUIPMENT: base_cli._run_equipment_flow,
-    SteamDemoFlowId.SHOP: base_cli._run_shop_flow,
-    SteamDemoFlowId.EQUIPMENT_UPGRADE: base_cli._run_equipment_upgrade_flow,
-    SteamDemoFlowId.EQUIPMENT_SALVAGE: base_cli._run_equipment_salvage_flow,
-    SteamDemoFlowId.CRAFTING: base_cli._run_crafting_flow,
-    SteamDemoFlowId.INN: base_cli._run_inn_flow,
-    SteamDemoFlowId.QUEST_BOARD: base_cli._run_quest_board_flow,
-    SteamDemoFlowId.TRAVEL: base_cli._run_travel_flow,
-    SteamDemoFlowId.NPC_DIALOGUE: base_cli._run_talk_npc_flow,
-    SteamDemoFlowId.GATHERING: base_cli._run_gathering_flow,
-    SteamDemoFlowId.TREASURE: base_cli._run_treasure_flow,
-    SteamDemoFlowId.FIELD_EVENT: base_cli._run_field_event_flow,
-}
 
 
 def _print_lines(lines: list[str]) -> None:
@@ -57,6 +47,89 @@ def _menu_choices(view: SteamDemoMenuViewModel) -> list[tuple[str, str]]:
         suffix = " [推奨]" if item.is_recommended else ""
         choices.append((item.action_id, f"{item.label}{suffix}"))
     return choices
+
+
+def _print_quest_board_view(view: QuestBoardScreenViewModel) -> None:
+    print(
+        f"- quest_board:active={view.active_quest_count}/{view.max_active_quests}:"
+        f"entries={len(view.entries)}"
+    )
+    for entry in view.entries:
+        print(
+            f"- quest:{entry.quest_id}:{entry.title}:status={entry.status_label}:"
+            f"can_accept={entry.can_accept}:progress={entry.progress_label}"
+        )
+
+
+def _run_quest_board_screen(app: PlayableSliceApplication) -> list[str]:
+    controller = QuestBoardScreenController(app)
+    view = controller.current_view()
+    _print_quest_board_view(view)
+
+    choices = [("cancel", "受注しない")]
+    choices.extend(
+        (entry.quest_id, f"{entry.title} [{entry.status_label}]")
+        for entry in view.entries
+        if entry.can_accept
+    )
+    if len(choices) == 1:
+        return ["quest_board:no_accept_available"]
+
+    selected = base_cli._choose(choices)
+    if selected == "cancel":
+        return ["quest_accept_cancelled"]
+    return list(controller.activate_quest(selected).logs)
+
+
+def _print_travel_view(view: TravelScreenViewModel) -> None:
+    print(
+        f"- current_location:{view.current_location_id}:{view.current_location_name}:"
+        f"destinations={len(view.destinations)}"
+    )
+    for destination in view.destinations:
+        print(
+            f"- destination:{destination.location_id}:{destination.name}:"
+            f"type={destination.location_type}"
+        )
+
+
+def _run_travel_screen(app: PlayableSliceApplication) -> list[str]:
+    controller = TravelScreenController(app)
+    view = controller.current_view()
+    _print_travel_view(view)
+
+    choices = [("cancel", "移動しない")]
+    choices.extend(
+        (
+            destination.location_id,
+            f"{destination.name} [{destination.location_type}]",
+        )
+        for destination in view.destinations
+    )
+    if len(choices) == 1:
+        return ["travel_failed:no_destination"]
+
+    selected = base_cli._choose(choices)
+    if selected == "cancel":
+        return ["travel_cancelled"]
+    return list(controller.activate_destination(selected).logs)
+
+
+_CLI_FLOW_HANDLERS: dict[SteamDemoFlowId, CLIFlowHandler] = {
+    SteamDemoFlowId.USE_ITEM: base_cli._run_use_item_flow,
+    SteamDemoFlowId.EQUIPMENT: base_cli._run_equipment_flow,
+    SteamDemoFlowId.SHOP: base_cli._run_shop_flow,
+    SteamDemoFlowId.EQUIPMENT_UPGRADE: base_cli._run_equipment_upgrade_flow,
+    SteamDemoFlowId.EQUIPMENT_SALVAGE: base_cli._run_equipment_salvage_flow,
+    SteamDemoFlowId.CRAFTING: base_cli._run_crafting_flow,
+    SteamDemoFlowId.INN: base_cli._run_inn_flow,
+    SteamDemoFlowId.QUEST_BOARD: _run_quest_board_screen,
+    SteamDemoFlowId.TRAVEL: _run_travel_screen,
+    SteamDemoFlowId.NPC_DIALOGUE: base_cli._run_talk_npc_flow,
+    SteamDemoFlowId.GATHERING: base_cli._run_gathering_flow,
+    SteamDemoFlowId.TREASURE: base_cli._run_treasure_flow,
+    SteamDemoFlowId.FIELD_EVENT: base_cli._run_field_event_flow,
+}
 
 
 def _run_cli_flow(
