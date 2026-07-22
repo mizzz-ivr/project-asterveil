@@ -119,6 +119,67 @@ class MenuNavigationServiceTests(unittest.TestCase):
         self.assertEqual(2, moved_up.selection.selected_index)
         self.assertEqual(2, moved_down.selection.selected_index)
 
+    def test_confirm_on_disabled_item_does_not_confirm_another_item(self) -> None:
+        items = (
+            MenuItemViewModel("one", "1"),
+            MenuItemViewModel("disabled", "無効", is_enabled=False),
+            MenuItemViewModel("three", "3"),
+        )
+
+        result = self.navigation.apply(
+            MenuSelectionState(selected_index=1),
+            items,
+            MenuInputAction.CONFIRM,
+        )
+
+        self.assertIsNone(result.confirmed_action_id)
+        self.assertEqual(0, result.selection.selected_index)
+
+    def test_move_from_disabled_item_follows_requested_direction(self) -> None:
+        items = (
+            MenuItemViewModel("one", "1"),
+            MenuItemViewModel("disabled", "無効", is_enabled=False),
+            MenuItemViewModel("three", "3"),
+        )
+        state = MenuSelectionState(selected_index=1)
+
+        moved_up = self.navigation.apply(state, items, MenuInputAction.MOVE_UP)
+        moved_down = self.navigation.apply(state, items, MenuInputAction.MOVE_DOWN)
+
+        self.assertEqual(0, moved_up.selection.selected_index)
+        self.assertEqual(2, moved_down.selection.selected_index)
+
+    def test_all_disabled_items_and_out_of_range_selection_are_safe(self) -> None:
+        disabled_items = (
+            MenuItemViewModel("one", "1", is_enabled=False),
+            MenuItemViewModel("two", "2", is_enabled=False),
+        )
+
+        no_selection = self.navigation.apply(
+            MenuSelectionState(selected_index=0),
+            disabled_items,
+            MenuInputAction.MOVE_DOWN,
+        )
+        self.assertIsNone(no_selection.selection.selected_index)
+
+        enabled_items = (
+            MenuItemViewModel("one", "1"),
+            MenuItemViewModel("two", "2"),
+        )
+        moved = self.navigation.apply(
+            MenuSelectionState(selected_index=99),
+            enabled_items,
+            MenuInputAction.MOVE_DOWN,
+        )
+        confirmed = self.navigation.apply(
+            MenuSelectionState(selected_index=99),
+            enabled_items,
+            MenuInputAction.CONFIRM,
+        )
+
+        self.assertEqual(0, moved.selection.selected_index)
+        self.assertIsNone(confirmed.confirmed_action_id)
+
     def test_confirm_cancel_and_guide_are_reported_without_mutating_items(self) -> None:
         items = (
             MenuItemViewModel("status", "ステータス"),
