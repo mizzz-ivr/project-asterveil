@@ -14,6 +14,7 @@ Project Asterveil は、重厚で感動的な長編ストーリー、戦略性�
 - [Release Readiness Assessment](./docs/RELEASE_READINESS_ASSESSMENT.md)
 - [Release Scope Options](./docs/RELEASE_SCOPE_OPTIONS.md)
 - [Production Gap Backlog](./docs/PRODUCTION_GAP_BACKLOG.md)
+- [Steam Demo Play Flow](./docs/STEAM_DEMO_PLAY_FLOW.md)
 
 ### 3) Vertical Slice 実装の技術基盤
 - [Technical Foundation](./docs/TECHNICAL_FOUNDATION.md)
@@ -27,6 +28,18 @@ Project Asterveil は、重厚で感動的な長編ストーリー、戦略性�
 - [Equipment Salvage Vertical Slice](./docs/EQUIPMENT_SALVAGE_VERTICAL_SLICE.md)
 - [Party Menu Vertical Slice](./docs/PARTY_MENU_VERTICAL_SLICE.md)
 - [Workshop Order Vertical Slice](./docs/WORKSHOP_ORDER_VERTICAL_SLICE.md)
+
+## Steamデモ実行
+
+```bash
+python -m game.app.cli.run_steam_demo
+```
+
+個別テスト:
+
+```bash
+python -m unittest tests.test_demo_flow_slice -v
+```
 
 ## Repository Bootstrap Structure
 
