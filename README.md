@@ -15,6 +15,7 @@ Project Asterveil は、重厚で感動的な長編ストーリー、戦略性�
 - [Release Scope Options](./docs/RELEASE_SCOPE_OPTIONS.md)
 - [Production Gap Backlog](./docs/PRODUCTION_GAP_BACKLOG.md)
 - [Steam Demo Play Flow](./docs/STEAM_DEMO_PLAY_FLOW.md)
+- [Input Action / Presentation Contract](./docs/INPUT_ACTION_PRESENTATION_CONTRACT.md)
 
 ### 3) Vertical Slice 実装の技術基盤
 - [Technical Foundation](./docs/TECHNICAL_FOUNDATION.md)
@@ -38,7 +39,7 @@ python -m game.app.cli.run_steam_demo
 個別テスト:
 
 ```bash
-python -m unittest tests.test_demo_flow_slice -v
+python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation -v
 ```
 
 ## Repository Bootstrap Structure
