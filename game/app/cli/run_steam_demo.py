@@ -4,9 +4,13 @@ import argparse
 from pathlib import Path
 
 from game.app.application.demo_flow_service import DemoFlowService, SteamDemoApplication
-from game.app.application.playable_slice import ActionItem, PlayableSliceApplication
+from game.app.application.playable_slice import PlayableSliceApplication
 from game.app.cli import run_game_slice as base_cli
 from game.app.infrastructure.demo_flow_repository import DemoFlowMasterDataRepository
+from game.app.presentation.menu_view_model import (
+    SteamDemoMenuPresenter,
+    SteamDemoMenuViewModel,
+)
 
 
 DEFAULT_FLOW_ID = "demo.steam.ch01.core_loop"
@@ -18,19 +22,17 @@ def _print_lines(lines: list[str]) -> None:
         print(f"- {line}")
 
 
-def _demo_actions(
-    app: PlayableSliceApplication,
-    demo: SteamDemoApplication,
-) -> list[ActionItem]:
-    items = [ActionItem("demo_guide", "現在のデモ目標を確認する")]
-    progress = demo.progress()
-    if (
-        progress.active_step is not None
-        and progress.active_step.recommended_action == "inspect_workshop"
-    ):
-        items.append(ActionItem("demo_workshop", "デモ工房ガイドを確認する"))
-    items.extend(app.available_actions())
-    return items
+def _print_menu_view(view: SteamDemoMenuViewModel) -> None:
+    print(f"- demo_menu_progress:{view.progress_label}")
+    print(f"- demo_menu_objective:{view.objective_title}:{view.objective_text}")
+
+
+def _menu_choices(view: SteamDemoMenuViewModel) -> list[tuple[str, str]]:
+    choices: list[tuple[str, str]] = []
+    for item in view.items:
+        suffix = " [推奨]" if item.is_recommended else ""
+        choices.append((item.action_id, f"{item.label}{suffix}"))
+    return choices
 
 
 def _dispatch_action(
@@ -81,6 +83,7 @@ def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
         flow_service=DemoFlowService(definitions),
         flow_id=flow_id,
     )
+    presenter = SteamDemoMenuPresenter()
 
     while True:
         print("\n=== Project Asterveil: Steam Demo ===")
@@ -104,14 +107,14 @@ def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
 
         _print_lines(demo.guidance_lines())
         while True:
-            progress = demo.progress()
-            if progress.is_completed:
+            view = presenter.build(app, demo)
+            if view.is_completed:
                 print("\n--- Steamデモ チェックポイント到達 ---")
             else:
                 print("\n--- Steamデモ メニュー ---")
+            _print_menu_view(view)
 
-            actions = [(item.key, item.label) for item in _demo_actions(app, demo)]
-            selected = base_cli._choose(actions)
+            selected = base_cli._choose(_menu_choices(view))
             logs = _dispatch_action(app, demo, selected)
             _print_lines(logs)
             if selected == "exit":
