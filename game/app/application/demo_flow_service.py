@@ -207,8 +207,8 @@ class SteamDemoApplication:
         if progress.active_step is None or progress.active_step.recommended_action != "save":
             active_step_id = progress.active_step.step_id if progress.active_step else "completed"
             self.playable.save_game()
-            return [f"demo_checkpoint_saved_out_of_order:active={active_step_id}", "save_completed"]
+            return [f"demo_save_completed_out_of_order:active={active_step_id}", "save_completed"]
 
         self.playable.quest_session.world_flags.add(self.CHECKPOINT_SAVED_FLAG)
         self.playable.save_game()
-        return ["demo_checkpoint_saved", "save_completed", *self.guidance_lines()]
+        return ["demo_checkpoint_saved", "save_completed"]
