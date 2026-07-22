@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from game.app.application.demo_flow_service import SteamDemoApplication
+from game.app.application.demo_flow_service import DemoFlowService, SteamDemoApplication
 from game.app.application.playable_slice import ActionItem, PlayableSliceApplication
 from game.app.cli import run_game_slice as base_cli
 from game.app.infrastructure.demo_flow_repository import DemoFlowMasterDataRepository
@@ -76,7 +76,11 @@ def _dispatch_action(
 def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
     app = PlayableSliceApplication(master_root=MASTER_ROOT, save_file_path=save_path)
     definitions = DemoFlowMasterDataRepository(MASTER_ROOT).load()
-    demo = SteamDemoApplication(app, flow_service=_flow_service(definitions), flow_id=flow_id)
+    demo = SteamDemoApplication(
+        app,
+        flow_service=DemoFlowService(definitions),
+        flow_id=flow_id,
+    )
 
     while True:
         print("\n=== Project Asterveil: Steam Demo ===")
@@ -113,13 +117,6 @@ def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
             if selected == "exit":
                 break
             _print_lines(demo.guidance_lines())
-
-
-def _flow_service(definitions: dict[str, object]):
-    # 循環importを避けつつ、CLIから進行サービスを構築する最小ファクトリ。
-    from game.app.application.demo_flow_service import DemoFlowService
-
-    return DemoFlowService(definitions)
 
 
 def main() -> int:
