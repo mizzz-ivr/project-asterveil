@@ -1,0 +1,82 @@
+[
+  {
+    "flow_id": "demo.steam.ch01.core_loop",
+    "name": "Steamデモ 第1章コアループ",
+    "description": "初回依頼の受注から工房確認とチェックポイント保存までを案内する。",
+    "steps": [
+      {
+        "step_id": "accept_first_quest",
+        "title": "最初の依頼を受注する",
+        "guidance_text": "クエストボードから『港湾記録の欠片』を受注してください。",
+        "recommended_action": "quest_board",
+        "completion_condition": {
+          "type": "quest_status",
+          "quest_id": "quest.ch01.missing_port_record",
+          "statuses": ["in_progress", "ready_to_complete", "completed"]
+        }
+      },
+      {
+        "step_id": "travel_to_tidal_flats",
+        "title": "潮汐干潟へ移動する",
+        "guidance_text": "移動メニューから潮汐干潟へ向かってください。",
+        "recommended_action": "move",
+        "completion_condition": {
+          "type": "any",
+          "conditions": [
+            {
+              "type": "current_location",
+              "location_id": "location.field.tidal_flats"
+            },
+            {
+              "type": "quest_status",
+              "quest_id": "quest.ch01.missing_port_record",
+              "statuses": ["ready_to_complete", "completed"]
+            }
+          ]
+        }
+      },
+      {
+        "step_id": "win_first_battle",
+        "title": "最初の戦闘に勝利する",
+        "guidance_text": "潮汐干潟で討伐へ進み、港の亡霊を撃破してください。",
+        "recommended_action": "hunt",
+        "completion_condition": {
+          "type": "quest_status",
+          "quest_id": "quest.ch01.missing_port_record",
+          "statuses": ["ready_to_complete", "completed"]
+        }
+      },
+      {
+        "step_id": "report_first_quest",
+        "title": "依頼を報告する",
+        "guidance_text": "拠点へ戻り、完了した依頼を報告してください。",
+        "recommended_action": "report",
+        "completion_condition": {
+          "type": "quest_status",
+          "quest_id": "quest.ch01.missing_port_record",
+          "statuses": ["completed"]
+        }
+      },
+      {
+        "step_id": "inspect_workshop",
+        "title": "工房の機能を確認する",
+        "guidance_text": "デモ工房ガイドを開き、クラフトと装備育成の入口を確認してください。",
+        "recommended_action": "inspect_workshop",
+        "completion_condition": {
+          "type": "world_flag",
+          "flag": "flag.demo.steam.workshop_checked"
+        }
+      },
+      {
+        "step_id": "save_demo_checkpoint",
+        "title": "デモチェックポイントを保存する",
+        "guidance_text": "セーブを実行して、続きから再開できる状態にしてください。",
+        "recommended_action": "save",
+        "completion_condition": {
+          "type": "world_flag",
+          "flag": "flag.demo.steam.checkpoint_saved"
+        }
+      }
+    ]
+  }
+]
