@@ -2,11 +2,17 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from typing import Callable
 
 from game.app.application.demo_flow_service import DemoFlowService, SteamDemoApplication
 from game.app.application.playable_slice import PlayableSliceApplication
 from game.app.cli import run_game_slice as base_cli
 from game.app.infrastructure.demo_flow_repository import DemoFlowMasterDataRepository
+from game.app.presentation.action_controller import (
+    ActionDispatchKind,
+    SteamDemoActionController,
+    SteamDemoFlowId,
+)
 from game.app.presentation.menu_view_model import (
     SteamDemoMenuPresenter,
     SteamDemoMenuViewModel,
@@ -15,6 +21,24 @@ from game.app.presentation.menu_view_model import (
 
 DEFAULT_FLOW_ID = "demo.steam.ch01.core_loop"
 MASTER_ROOT = Path("data/master")
+
+CLIFlowHandler = Callable[[PlayableSliceApplication], list[str]]
+
+_CLI_FLOW_HANDLERS: dict[SteamDemoFlowId, CLIFlowHandler] = {
+    SteamDemoFlowId.USE_ITEM: base_cli._run_use_item_flow,
+    SteamDemoFlowId.EQUIPMENT: base_cli._run_equipment_flow,
+    SteamDemoFlowId.SHOP: base_cli._run_shop_flow,
+    SteamDemoFlowId.EQUIPMENT_UPGRADE: base_cli._run_equipment_upgrade_flow,
+    SteamDemoFlowId.EQUIPMENT_SALVAGE: base_cli._run_equipment_salvage_flow,
+    SteamDemoFlowId.CRAFTING: base_cli._run_crafting_flow,
+    SteamDemoFlowId.INN: base_cli._run_inn_flow,
+    SteamDemoFlowId.QUEST_BOARD: base_cli._run_quest_board_flow,
+    SteamDemoFlowId.TRAVEL: base_cli._run_travel_flow,
+    SteamDemoFlowId.NPC_DIALOGUE: base_cli._run_talk_npc_flow,
+    SteamDemoFlowId.GATHERING: base_cli._run_gathering_flow,
+    SteamDemoFlowId.TREASURE: base_cli._run_treasure_flow,
+    SteamDemoFlowId.FIELD_EVENT: base_cli._run_field_event_flow,
+}
 
 
 def _print_lines(lines: list[str]) -> None:
@@ -35,44 +59,27 @@ def _menu_choices(view: SteamDemoMenuViewModel) -> list[tuple[str, str]]:
     return choices
 
 
+def _run_cli_flow(
+    app: PlayableSliceApplication,
+    flow_id: SteamDemoFlowId,
+) -> list[str]:
+    handler = _CLI_FLOW_HANDLERS.get(flow_id)
+    if handler is None:
+        return [f"flow_not_supported:{flow_id.value}"]
+    return handler(app)
+
+
 def _dispatch_action(
     app: PlayableSliceApplication,
-    demo: SteamDemoApplication,
+    controller: SteamDemoActionController,
     selected: str,
 ) -> list[str]:
-    if selected == "demo_guide":
-        return demo.guidance_lines()
-    if selected == "demo_workshop":
-        return demo.inspect_workshop()
-    if selected == "save":
-        return demo.save_checkpoint()
-    if selected == "use_item":
-        return base_cli._run_use_item_flow(app)
-    if selected == "equip":
-        return base_cli._run_equipment_flow(app)
-    if selected == "shop":
-        return base_cli._run_shop_flow(app)
-    if selected == "upgrade_equipment":
-        return base_cli._run_equipment_upgrade_flow(app)
-    if selected == "salvage_equipment":
-        return base_cli._run_equipment_salvage_flow(app)
-    if selected == "craft":
-        return base_cli._run_crafting_flow(app)
-    if selected == "inn":
-        return base_cli._run_inn_flow(app)
-    if selected == "quest_board":
-        return base_cli._run_quest_board_flow(app)
-    if selected == "move":
-        return base_cli._run_travel_flow(app)
-    if selected == "talk_npc":
-        return base_cli._run_talk_npc_flow(app)
-    if selected == "gather":
-        return base_cli._run_gathering_flow(app)
-    if selected == "open_treasure":
-        return base_cli._run_treasure_flow(app)
-    if selected == "field_events":
-        return base_cli._run_field_event_flow(app)
-    return app.perform_action(selected)
+    result = controller.dispatch(selected)
+    if result.kind == ActionDispatchKind.FLOW_REQUIRED:
+        if result.flow_id is None:
+            return [f"flow_dispatch_failed:missing_flow_id:{selected}"]
+        return _run_cli_flow(app, result.flow_id)
+    return list(result.logs)
 
 
 def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
@@ -84,6 +91,7 @@ def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
         flow_id=flow_id,
     )
     presenter = SteamDemoMenuPresenter()
+    action_controller = SteamDemoActionController(app, demo)
 
     while True:
         print("\n=== Project Asterveil: Steam Demo ===")
@@ -115,7 +123,7 @@ def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
             _print_menu_view(view)
 
             selected = base_cli._choose(_menu_choices(view))
-            logs = _dispatch_action(app, demo, selected)
+            logs = _dispatch_action(app, action_controller, selected)
             _print_lines(logs)
             if selected == "exit":
                 break
