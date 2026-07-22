@@ -82,34 +82,57 @@ class MenuNavigationService:
         if action == MenuInputAction.SHOW_GUIDE:
             return MenuInteractionResult(selection=normalized, guide_requested=True)
         if action == MenuInputAction.CONFIRM:
-            if normalized.selected_index is None:
+            selected_index = state.selected_index
+            if not self._is_enabled_index(item_tuple, selected_index):
                 return MenuInteractionResult(selection=normalized)
-            selected_item = item_tuple[normalized.selected_index]
-            if not selected_item.is_enabled:
-                return MenuInteractionResult(selection=normalized)
+            selected_item = item_tuple[selected_index]
             return MenuInteractionResult(
-                selection=normalized,
+                selection=MenuSelectionState(selected_index=selected_index),
                 confirmed_action_id=selected_item.action_id,
             )
         if action not in {MenuInputAction.MOVE_UP, MenuInputAction.MOVE_DOWN}:
             return MenuInteractionResult(selection=normalized)
 
         selectable = self._selectable_indices(item_tuple)
-        if not selectable or normalized.selected_index is None:
+        if not selectable:
             return MenuInteractionResult(selection=MenuSelectionState(None))
-        if len(selectable) == 1:
+
+        selected_index = state.selected_index
+        if selected_index is None or not 0 <= selected_index < len(item_tuple):
             return MenuInteractionResult(selection=normalized)
 
-        current_position = selectable.index(normalized.selected_index)
         delta = -1 if action == MenuInputAction.MOVE_UP else 1
-        next_position = (current_position + delta) % len(selectable)
+        next_index = self._find_next_enabled_index(item_tuple, selected_index, delta)
         return MenuInteractionResult(
-            selection=MenuSelectionState(selected_index=selectable[next_position])
+            selection=MenuSelectionState(selected_index=next_index)
         )
 
     @staticmethod
     def _selectable_indices(items: tuple[MenuItemViewModel, ...]) -> tuple[int, ...]:
         return tuple(index for index, item in enumerate(items) if item.is_enabled)
+
+    @staticmethod
+    def _is_enabled_index(
+        items: tuple[MenuItemViewModel, ...],
+        selected_index: int | None,
+    ) -> bool:
+        return (
+            selected_index is not None
+            and 0 <= selected_index < len(items)
+            and items[selected_index].is_enabled
+        )
+
+    @staticmethod
+    def _find_next_enabled_index(
+        items: tuple[MenuItemViewModel, ...],
+        start_index: int,
+        delta: int,
+    ) -> int:
+        for offset in range(1, len(items) + 1):
+            candidate = (start_index + delta * offset) % len(items)
+            if items[candidate].is_enabled:
+                return candidate
+        raise RuntimeError("enabled menu item must exist before navigation")
 
 
 class SteamDemoMenuPresenter:
