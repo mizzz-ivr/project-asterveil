@@ -151,6 +151,13 @@ class SteamDemoMenuPresenterTests(unittest.TestCase):
         )
         return playable, demo
 
+    def _accept_and_complete_first_quest(self, playable: PlayableSliceApplication) -> None:
+        self.assertEqual(
+            [f"quest_accepted:{FIRST_QUEST_ID}"],
+            playable.accept_quest(FIRST_QUEST_ID),
+        )
+        playable.quest_session.quest_states[FIRST_QUEST_ID].status = QuestStatus.COMPLETED
+
     def test_new_game_view_model_recommends_the_quest_board(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             playable, demo = self._build_apps(Path(directory) / "save.json")
@@ -167,7 +174,7 @@ class SteamDemoMenuPresenterTests(unittest.TestCase):
     def test_completed_quest_view_model_exposes_workshop_action(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             playable, demo = self._build_apps(Path(directory) / "save.json")
-            playable.quest_session.quest_states[FIRST_QUEST_ID].status = QuestStatus.COMPLETED
+            self._accept_and_complete_first_quest(playable)
 
             view = SteamDemoMenuPresenter().build(playable, demo)
 
@@ -182,7 +189,7 @@ class SteamDemoMenuPresenterTests(unittest.TestCase):
     def test_completed_demo_view_model_has_no_recommended_action(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             playable, demo = self._build_apps(Path(directory) / "save.json")
-            playable.quest_session.quest_states[FIRST_QUEST_ID].status = QuestStatus.COMPLETED
+            self._accept_and_complete_first_quest(playable)
             playable.quest_session.world_flags.update(
                 {
                     SteamDemoApplication.WORKSHOP_CHECKED_FLAG,
