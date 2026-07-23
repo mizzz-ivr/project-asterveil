@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Callable
 
 from game.app.application.demo_flow_service import DemoFlowService, SteamDemoApplication
+from game.app.application.playable_exploration_facade import PlayableExplorationFacade
 from game.app.application.playable_interaction_facade import PlayableInteractionFacade
 from game.app.application.playable_slice import PlayableSliceApplication
 from game.app.cli import run_game_slice as base_cli
@@ -13,6 +14,12 @@ from game.app.presentation.action_controller import (
     ActionDispatchKind,
     SteamDemoActionController,
     SteamDemoFlowId,
+)
+from game.app.presentation.gathering_treasure_screen import (
+    GatheringScreenController,
+    GatheringScreenViewModel,
+    TreasureScreenController,
+    TreasureScreenViewModel,
 )
 from game.app.presentation.menu_view_model import (
     SteamDemoMenuPresenter,
@@ -237,6 +244,74 @@ def _run_field_event_screen(app: PlayableSliceApplication) -> list[str]:
     return list(controller.activate_choice(selected_choice).logs)
 
 
+def _print_gathering_view(view: GatheringScreenViewModel) -> None:
+    print(
+        f"- gathering_nodes:location={view.current_location_id}:"
+        f"count={len(view.nodes)}"
+    )
+    for node in view.nodes:
+        print(
+            f"- gathering_node:{node.node_id}:{node.name}:type={node.node_type}:"
+            f"can_gather={node.can_gather}:gathered={node.is_gathered}:"
+            f"reason={node.reason_code}:respawn_rule={node.respawn_rule}"
+        )
+        print(f"- gathering_desc:{node.node_id}:{node.description}")
+        if node.respawn_description:
+            print(f"- gathering_respawn:{node.node_id}:{node.respawn_description}")
+
+
+def _run_gathering_screen(app: PlayableSliceApplication) -> list[str]:
+    controller = GatheringScreenController(PlayableExplorationFacade(app))
+    view = controller.current_view()
+    _print_gathering_view(view)
+    available = [node for node in view.nodes if node.can_gather]
+    if not available:
+        return ["gather_failed:no_available_node"]
+
+    choices = [("cancel", "採取しない")]
+    choices.extend(
+        (node.node_id, f"{node.name} [{node.node_type}]")
+        for node in available
+    )
+    selected = base_cli._choose(choices)
+    if selected == "cancel":
+        return ["gather_cancelled"]
+    return list(controller.activate_node(selected).logs)
+
+
+def _print_treasure_view(view: TreasureScreenViewModel) -> None:
+    print(
+        f"- treasure_nodes:location={view.current_location_id}:"
+        f"count={len(view.nodes)}"
+    )
+    for node in view.nodes:
+        print(
+            f"- treasure_node:{node.reward_node_id}:{node.name}:type={node.node_type}:"
+            f"can_open={node.can_open}:opened={node.is_opened}:"
+            f"one_time={node.one_time}:reason={node.reason_code}"
+        )
+        print(f"- treasure_desc:{node.reward_node_id}:{node.description}")
+
+
+def _run_treasure_screen(app: PlayableSliceApplication) -> list[str]:
+    controller = TreasureScreenController(PlayableExplorationFacade(app))
+    view = controller.current_view()
+    _print_treasure_view(view)
+    openable = [node for node in view.nodes if node.can_open]
+    if not openable:
+        return ["treasure_open_failed:no_openable_node"]
+
+    choices = [("cancel", "調べない")]
+    choices.extend(
+        (node.reward_node_id, f"{node.name} [{node.node_type}]")
+        for node in openable
+    )
+    selected = base_cli._choose(choices)
+    if selected == "cancel":
+        return ["treasure_open_cancelled"]
+    return list(controller.activate_node(selected).logs)
+
+
 _CLI_FLOW_HANDLERS: dict[SteamDemoFlowId, CLIFlowHandler] = {
     SteamDemoFlowId.USE_ITEM: base_cli._run_use_item_flow,
     SteamDemoFlowId.EQUIPMENT: base_cli._run_equipment_flow,
@@ -248,8 +323,8 @@ _CLI_FLOW_HANDLERS: dict[SteamDemoFlowId, CLIFlowHandler] = {
     SteamDemoFlowId.QUEST_BOARD: _run_quest_board_screen,
     SteamDemoFlowId.TRAVEL: _run_travel_screen,
     SteamDemoFlowId.NPC_DIALOGUE: _run_npc_dialogue_screen,
-    SteamDemoFlowId.GATHERING: base_cli._run_gathering_flow,
-    SteamDemoFlowId.TREASURE: base_cli._run_treasure_flow,
+    SteamDemoFlowId.GATHERING: _run_gathering_screen,
+    SteamDemoFlowId.TREASURE: _run_treasure_screen,
     SteamDemoFlowId.FIELD_EVENT: _run_field_event_screen,
 }
 
