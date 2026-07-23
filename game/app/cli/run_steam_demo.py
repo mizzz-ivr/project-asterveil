@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Callable
 
 from game.app.application.demo_flow_service import DemoFlowService, SteamDemoApplication
+from game.app.application.playable_interaction_facade import PlayableInteractionFacade
 from game.app.application.playable_slice import PlayableSliceApplication
 from game.app.cli import run_game_slice as base_cli
 from game.app.infrastructure.demo_flow_repository import DemoFlowMasterDataRepository
@@ -16,6 +17,14 @@ from game.app.presentation.action_controller import (
 from game.app.presentation.menu_view_model import (
     SteamDemoMenuPresenter,
     SteamDemoMenuViewModel,
+)
+from game.app.presentation.npc_field_event_screen import (
+    FieldEventScreenController,
+    FieldEventScreenMode,
+    FieldEventScreenViewModel,
+    NpcDialogueScreenController,
+    NpcDialogueScreenMode,
+    NpcDialogueScreenViewModel,
 )
 from game.app.presentation.quest_travel_screen import (
     QuestBoardScreenController,
@@ -115,6 +124,119 @@ def _run_travel_screen(app: PlayableSliceApplication) -> list[str]:
     return list(controller.activate_destination(selected).logs)
 
 
+def _print_npc_dialogue_view(view: NpcDialogueScreenViewModel) -> None:
+    if view.mode == NpcDialogueScreenMode.NPC_LIST:
+        print(f"- npc_list:count={len(view.npcs)}")
+        for npc in view.npcs:
+            print(f"- npc:{npc.npc_id}:{npc.npc_name}:location={npc.location_id}")
+        return
+
+    dialogue = view.dialogue
+    if dialogue is None:
+        return
+    print(
+        f"- dialogue:{dialogue.npc_id}:{dialogue.npc_name}:"
+        f"entry={dialogue.entry_id or 'fallback'}:step={dialogue.step_id or 'completed'}"
+    )
+    for line in dialogue.lines:
+        print(f"- line:{dialogue.speaker or dialogue.npc_name}:{line}")
+    for choice in dialogue.choices:
+        print(f"- choice:{choice.choice_id}:{choice.text}")
+
+
+def _run_npc_dialogue_screen(app: PlayableSliceApplication) -> list[str]:
+    controller = NpcDialogueScreenController(PlayableInteractionFacade(app))
+    view = controller.current_view()
+    _print_npc_dialogue_view(view)
+    if not view.npcs:
+        return ["dialogue_unavailable:no_npc"]
+
+    npc_choices = [("cancel", "話しかけない")]
+    npc_choices.extend((npc.npc_id, npc.npc_name) for npc in view.npcs)
+    selected_npc = base_cli._choose(npc_choices)
+    if selected_npc == "cancel":
+        return ["dialogue_cancelled"]
+
+    interaction = controller.activate_npc(selected_npc)
+    logs = list(interaction.logs)
+    while interaction.view.mode == NpcDialogueScreenMode.DIALOGUE:
+        _print_npc_dialogue_view(interaction.view)
+        dialogue = interaction.view.dialogue
+        if dialogue is None or dialogue.completed or not dialogue.choices:
+            break
+        choice_options = [("cancel", "会話をやめる")]
+        choice_options.extend(
+            (choice.choice_id, choice.text)
+            for choice in dialogue.choices
+        )
+        selected_choice = base_cli._choose(choice_options)
+        if selected_choice == "cancel":
+            logs.append("dialogue_cancelled")
+            break
+        interaction = controller.activate_choice(selected_choice)
+        logs.extend(interaction.logs)
+        if interaction.rejection_reason is not None:
+            break
+    return logs
+
+
+def _print_field_event_view(view: FieldEventScreenViewModel) -> None:
+    if view.mode == FieldEventScreenMode.EVENT_LIST:
+        print(f"- field_event_list:count={len(view.events)}")
+        for event in view.events:
+            print(
+                f"- field_event:{event.event_id}:{event.name}:"
+                f"can_execute={event.can_execute}:completed={event.is_completed}:"
+                f"repeatable={event.repeatable}:reason={event.reason_code}"
+            )
+            print(f"- field_event_desc:{event.event_id}:{event.description}")
+        return
+
+    detail = view.detail
+    if detail is None:
+        return
+    print(
+        f"- field_event_detail:{detail.event_id}:{detail.name}:"
+        f"repeatable={detail.repeatable}:completed={detail.is_completed}"
+    )
+    print(f"- field_event_desc:{detail.event_id}:{detail.description}")
+    for choice in detail.choices:
+        print(f"- field_event_choice:{choice.choice_id}:{choice.text}")
+
+
+def _run_field_event_screen(app: PlayableSliceApplication) -> list[str]:
+    controller = FieldEventScreenController(PlayableInteractionFacade(app))
+    view = controller.current_view()
+    _print_field_event_view(view)
+    executable = [event for event in view.events if event.can_execute]
+    if not executable:
+        return ["field_event_unavailable:no_executable_event"]
+
+    event_options = [("cancel", "探索イベントを実行しない")]
+    event_options.extend((event.event_id, event.name) for event in executable)
+    selected_event = base_cli._choose(event_options)
+    if selected_event == "cancel":
+        return ["field_event_cancelled"]
+
+    detail_interaction = controller.activate_event(selected_event)
+    if detail_interaction.rejection_reason is not None:
+        return list(detail_interaction.logs)
+    _print_field_event_view(detail_interaction.view)
+    detail = detail_interaction.view.detail
+    if detail is None or not detail.choices:
+        return [f"field_event_unavailable:no_choice:{selected_event}"]
+
+    choice_options = [("cancel", "このイベントをやめる")]
+    choice_options.extend(
+        (choice.choice_id, choice.text)
+        for choice in detail.choices
+    )
+    selected_choice = base_cli._choose(choice_options)
+    if selected_choice == "cancel":
+        return ["field_event_cancelled"]
+    return list(controller.activate_choice(selected_choice).logs)
+
+
 _CLI_FLOW_HANDLERS: dict[SteamDemoFlowId, CLIFlowHandler] = {
     SteamDemoFlowId.USE_ITEM: base_cli._run_use_item_flow,
     SteamDemoFlowId.EQUIPMENT: base_cli._run_equipment_flow,
@@ -125,10 +247,10 @@ _CLI_FLOW_HANDLERS: dict[SteamDemoFlowId, CLIFlowHandler] = {
     SteamDemoFlowId.INN: base_cli._run_inn_flow,
     SteamDemoFlowId.QUEST_BOARD: _run_quest_board_screen,
     SteamDemoFlowId.TRAVEL: _run_travel_screen,
-    SteamDemoFlowId.NPC_DIALOGUE: base_cli._run_talk_npc_flow,
+    SteamDemoFlowId.NPC_DIALOGUE: _run_npc_dialogue_screen,
     SteamDemoFlowId.GATHERING: base_cli._run_gathering_flow,
     SteamDemoFlowId.TREASURE: base_cli._run_treasure_flow,
-    SteamDemoFlowId.FIELD_EVENT: base_cli._run_field_event_flow,
+    SteamDemoFlowId.FIELD_EVENT: _run_field_event_screen,
 }
 
 
