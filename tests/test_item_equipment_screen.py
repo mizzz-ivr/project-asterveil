@@ -22,6 +22,7 @@ MEMBER_ID = "char.main.rion"
 POTION_ID = "item.consumable.mini_potion"
 BRONZE_BLADE_ID = "equip.weapon.bronze_blade"
 IRON_BLADE_ID = "equip.weapon.iron_blade"
+LEATHER_JACKET_ID = "equip.armor.leather_jacket"
 
 
 class ItemEquipmentScreenTestBase(unittest.TestCase):
@@ -63,7 +64,9 @@ class PartyMenuFacadeTests(ItemEquipmentScreenTestBase):
             self.assertEqual(MEMBER_ID, member.character_id)
             self.assertEqual(("weapon", "armor", "accessory"), tuple(slot.slot_type for slot in slots))
             self.assertEqual(1, bronze.owned)
-            self.assertEqual(1, bronze.available)
+            self.assertEqual(1, bronze.equipped_count)
+            self.assertEqual(0, bronze.available)
+            self.assertTrue(bronze.is_current)
             self.assertTrue(bronze.can_equip)
             self.assertEqual(4, bronze.atk_bonus)
 
@@ -97,6 +100,26 @@ class PartyMenuFacadeTests(ItemEquipmentScreenTestBase):
             self.assertEqual("hp_full", full_hp.code)
             self.assertEqual("item_not_available", unknown_item.code)
             self.assertEqual("target_not_available", unknown_target.code)
+            self.assertEqual(3, app.inventory_state["items"][POTION_ID])
+
+    def test_item_target_check_matches_existing_item_use_contract_with_hp_bonus(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            app = self.build_app(Path(directory) / "save.json")
+            app.inventory_state["items"][LEATHER_JACKET_ID] = 1
+            app.equip_item(MEMBER_ID, "armor", LEATHER_JACKET_ID)
+            facade = PlayablePartyMenuFacade(app)
+
+            member = facade.list_party_members()[0]
+            target = facade.list_item_targets(POTION_ID)[0]
+            result = facade.use_item(POTION_ID, MEMBER_ID)
+
+            self.assertEqual(120, member.current_hp)
+            self.assertEqual(132, member.max_hp)
+            self.assertEqual(app.party_members[0].current_hp, app.party_members[0].max_hp)
+            self.assertFalse(target.can_use)
+            self.assertEqual("hp_full", target.reason_code)
+            self.assertFalse(result.success)
+            self.assertEqual("hp_full", result.code)
             self.assertEqual(3, app.inventory_state["items"][POTION_ID])
 
     def test_equipment_rechecks_stock_and_updates_member(self) -> None:
