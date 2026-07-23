@@ -128,14 +128,17 @@ class PlayablePartyMenuFacade:
         item = next((entry for entry in self.list_usable_items() if entry.item_id == item_id), None)
         if item is None:
             return tuple()
-        return tuple(
-            ItemTargetAvailability(
-                member=self._member_summary(member),
-                can_use=self._can_apply_item(item, member)[0],
-                reason_code=self._can_apply_item(item, member)[1],
+        targets: list[ItemTargetAvailability] = []
+        for member in self._playable.party_members:
+            can_use, reason_code = self._can_apply_item(item, member)
+            targets.append(
+                ItemTargetAvailability(
+                    member=self._member_summary(member),
+                    can_use=can_use,
+                    reason_code=reason_code,
+                )
             )
-            for member in self._playable.party_members
-        )
+        return tuple(targets)
 
     def use_item(self, item_id: str, target_character_id: str) -> ItemUseExecutionResult:
         item = next((entry for entry in self.list_usable_items() if entry.item_id == item_id), None)
@@ -335,17 +338,16 @@ class PlayablePartyMenuFacade:
             return False, "no_stock"
         if item.target_scope not in {"single_ally", "self"}:
             return False, "unsupported_target_scope"
-        final = self._playable._equipment_service.resolve_final_stats(member)
         if item.effect_type == "recover_hp":
             return (
                 (True, "ok")
-                if final["current_hp"] < final["max_hp"]
+                if member.current_hp < member.max_hp
                 else (False, "hp_full")
             )
         if item.effect_type == "recover_sp":
             return (
                 (True, "ok")
-                if final["current_sp"] < final["max_sp"]
+                if member.current_sp < member.max_sp
                 else (False, "sp_full")
             )
         if item.effect_type == "cure_effect":
