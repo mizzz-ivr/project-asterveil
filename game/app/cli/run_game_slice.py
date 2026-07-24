@@ -123,34 +123,16 @@ def _run_equipment_flow(app: PlayableSliceApplication) -> list[str]:
     return app.equip_item(selected_member, slot_type, selected_equipment)
 
 
-
-
 def _run_equipment_upgrade_flow(app: PlayableSliceApplication) -> list[str]:
-    lines = app.workshop_equipment_upgrade_lines()
-    for line in lines:
-        print(f"- {line}")
-    options = [("cancel", "強化しない")]
-    options.extend(app.upgradable_equipment_options())
-    if len(options) == 1:
-        return ["equipment_upgrade:none"]
-    selected = _choose(options)
-    if selected == "cancel":
-        return ["equipment_upgrade_cancelled"]
-    return app.upgrade_equipment(selected)
+    from game.app.cli.equipment_workshop_cli import run_equipment_upgrade_screen
+
+    return run_equipment_upgrade_screen(app)
 
 
 def _run_equipment_salvage_flow(app: PlayableSliceApplication) -> list[str]:
-    lines = app.workshop_equipment_salvage_lines()
-    for line in lines:
-        print(f"- {line}")
-    options = [("cancel", "分解しない")]
-    options.extend(app.salvageable_equipment_options())
-    if len(options) == 1:
-        return ["equipment_salvage:none"]
-    selected = _choose(options)
-    if selected == "cancel":
-        return ["equipment_salvage_cancelled"]
-    return app.salvage_equipment(selected)
+    from game.app.cli.equipment_workshop_cli import run_equipment_salvage_screen
+
+    return run_equipment_salvage_screen(app)
 
 
 def _run_quest_board_flow(app: PlayableSliceApplication) -> list[str]:
