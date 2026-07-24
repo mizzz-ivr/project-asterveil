@@ -9,6 +9,7 @@ from game.app.application.playable_exploration_facade import PlayableExploration
 from game.app.application.playable_interaction_facade import PlayableInteractionFacade
 from game.app.application.playable_slice import PlayableSliceApplication
 from game.app.cli import run_game_slice as base_cli
+from game.app.cli.item_equipment_cli import run_equipment_screen, run_item_use_screen
 from game.app.infrastructure.demo_flow_repository import DemoFlowMasterDataRepository
 from game.app.presentation.action_controller import (
     ActionDispatchKind,
@@ -313,8 +314,8 @@ def _run_treasure_screen(app: PlayableSliceApplication) -> list[str]:
 
 
 _CLI_FLOW_HANDLERS: dict[SteamDemoFlowId, CLIFlowHandler] = {
-    SteamDemoFlowId.USE_ITEM: base_cli._run_use_item_flow,
-    SteamDemoFlowId.EQUIPMENT: base_cli._run_equipment_flow,
+    SteamDemoFlowId.USE_ITEM: run_item_use_screen,
+    SteamDemoFlowId.EQUIPMENT: run_equipment_screen,
     SteamDemoFlowId.SHOP: base_cli._run_shop_flow,
     SteamDemoFlowId.EQUIPMENT_UPGRADE: base_cli._run_equipment_upgrade_flow,
     SteamDemoFlowId.EQUIPMENT_SALVAGE: base_cli._run_equipment_salvage_flow,
