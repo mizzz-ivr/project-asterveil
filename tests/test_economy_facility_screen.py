@@ -23,6 +23,7 @@ from game.save.domain.entities import PartyActiveEffectState
 POTION_ID = "item.consumable.mini_potion"
 LOCKED_SHOP_ITEM_ID = "equip.weapon.prayer_staff"
 MEMORY_TONIC_RECIPE_ID = "recipe.craft.memory_tonic"
+HERBAL_FOCUS_RECIPE_ID = "recipe.craft.herbal_focus_drop"
 MEMORY_SHARD_ID = "item.material.memory_shard"
 MEMORY_TONIC_ID = "item.consumable.memory_tonic"
 REST_NODE_ID = "node.herb.astel_backyard_01"
@@ -96,25 +97,34 @@ class EconomyFacilityFacadeTests(EconomyFacilityScreenTestBase):
         with tempfile.TemporaryDirectory() as directory:
             app = self.build_app(Path(directory) / "save.json")
             facade = PlayableEconomyFacilityFacade(app)
+            recipes = facade.crafting_summary().recipes
 
-            recipe = next(
-                entry
-                for entry in facade.crafting_summary().recipes
-                if entry.recipe_id == MEMORY_TONIC_RECIPE_ID
+            memory_recipe = next(
+                entry for entry in recipes if entry.recipe_id == MEMORY_TONIC_RECIPE_ID
+            )
+            undiscovered_recipe = next(
+                entry for entry in recipes if entry.recipe_id == HERBAL_FOCUS_RECIPE_ID
             )
 
-            self.assertFalse(recipe.is_discovered)
-            self.assertTrue(recipe.discovery_requirement_met)
-            self.assertTrue(recipe.is_unlocked)
-            self.assertFalse(recipe.can_craft)
-            self.assertEqual("missing_material", recipe.reason_code)
+            self.assertTrue(memory_recipe.is_discovered)
+            self.assertTrue(memory_recipe.discovery_requirement_met)
+            self.assertTrue(memory_recipe.is_unlocked)
+            self.assertFalse(memory_recipe.can_craft)
+            self.assertEqual("missing_material", memory_recipe.reason_code)
             memory_shard = next(
-                material for material in recipe.materials if material.item_id == MEMORY_SHARD_ID
+                material
+                for material in memory_recipe.materials
+                if material.item_id == MEMORY_SHARD_ID
             )
             self.assertEqual(0, memory_shard.owned)
             self.assertEqual(1, memory_shard.required)
             self.assertFalse(memory_shard.is_sufficient)
-            self.assertEqual(MEMORY_TONIC_ID, recipe.outputs[0].item_id)
+            self.assertEqual(MEMORY_TONIC_ID, memory_recipe.outputs[0].item_id)
+
+            self.assertFalse(undiscovered_recipe.is_discovered)
+            self.assertTrue(undiscovered_recipe.discovery_requirement_met)
+            self.assertFalse(undiscovered_recipe.is_unlocked)
+            self.assertEqual("required_flag_missing", undiscovered_recipe.reason_code)
 
     def test_craft_recipe_consumes_materials_and_grants_output(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
