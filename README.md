@@ -22,6 +22,7 @@ Project Asterveil は、重厚で感動的な長編ストーリー、戦略性�
 - [Gathering / Treasure Screen](./docs/GATHERING_TREASURE_SCREEN.md)
 - [Item Use / Equipment Screen](./docs/ITEM_EQUIPMENT_SCREEN.md)
 - [Equipment Upgrade / Salvage Screen](./docs/EQUIPMENT_WORKSHOP_SCREEN.md)
+- [Shop / Crafting / Inn Screen](./docs/ECONOMY_FACILITY_SCREEN.md)
 
 ### 3) Vertical Slice 実装の技術基盤
 - [Technical Foundation](./docs/TECHNICAL_FOUNDATION.md)
@@ -45,7 +46,7 @@ python -m game.app.cli.run_steam_demo
 個別テスト:
 
 ```bash
-python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen -v
+python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen tests.test_economy_facility_screen -v
 ```
 
 ## Repository Bootstrap Structure
