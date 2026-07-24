@@ -45,59 +45,21 @@ def _run_use_item_flow(app: PlayableSliceApplication) -> list[str]:
 
 
 def _run_shop_flow(app: PlayableSliceApplication) -> list[str]:
-    catalog = app.shop_catalog_lines()
-    for line in catalog:
-        print(f"- {line}")
-    if any(line.startswith("shop_failed:") for line in catalog):
-        return []
+    from game.app.cli.economy_facility_cli import run_shop_screen
 
-    purchase_choices = [("cancel", "購入しない")]
-    for line in catalog:
-        if not line.startswith("shop_item:"):
-            continue
-        _, item_id, item_name, price_part, _ = line.split(":", 4)
-        purchase_choices.append((item_id, f"{item_name} ({item_id}) {price_part}"))
-
-    selected_item = _choose(purchase_choices)
-    if selected_item == "cancel":
-        return ["shop_purchase_cancelled"]
-    return app.buy_item(selected_item)
+    return run_shop_screen(app)
 
 
 def _run_crafting_flow(app: PlayableSliceApplication) -> list[str]:
-    recipe_lines = app.crafting_recipe_lines()
-    for line in recipe_lines:
-        print(f"- {line}")
+    from game.app.cli.economy_facility_cli import run_crafting_screen
 
-    options: list[tuple[str, str]] = [("cancel", "クラフトしない")]
-    for line in recipe_lines:
-        if not line.startswith("craft_recipe:"):
-            continue
-        _, recipe_id, recipe_name, category_part, can_craft_part, ingredients_part, outputs_part = line.split(":", 6)
-        options.append((recipe_id, f"{recipe_name} ({recipe_id}) {category_part} {can_craft_part} {ingredients_part} {outputs_part}"))
-
-    selected = _choose(options)
-    if selected == "cancel":
-        return ["craft_cancelled"]
-    return app.craft_recipe(selected)
+    return run_crafting_screen(app)
 
 
 def _run_inn_flow(app: PlayableSliceApplication) -> list[str]:
-    info = app.inn_info_lines()
-    for line in info:
-        print(f"- {line}")
-    if any(line.startswith("inn_failed:") for line in info):
-        return []
+    from game.app.cli.economy_facility_cli import run_inn_screen
 
-    selected = _choose(
-        [
-            ("stay", "宿泊する"),
-            ("cancel", "やめる"),
-        ]
-    )
-    if selected == "cancel":
-        return ["inn_cancelled"]
-    return app.stay_at_inn()
+    return run_inn_screen(app)
 
 
 def _run_equipment_flow(app: PlayableSliceApplication) -> list[str]:
