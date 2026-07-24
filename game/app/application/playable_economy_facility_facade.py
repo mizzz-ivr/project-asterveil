@@ -69,6 +69,7 @@ class CraftRecipeSummary:
     required_workshop_level: int
     current_workshop_level: int
     is_discovered: bool
+    discovery_requirement_met: bool
     is_unlocked: bool
     can_craft: bool
     reason_code: str
@@ -272,8 +273,8 @@ class PlayableEconomyFacilityFacade:
                     current_workshop_level=workshop_level,
                     is_discovered=(
                         recipe.recipe_id in self._playable.discovered_recipe_ids
-                        or discovery_met
                     ),
+                    discovery_requirement_met=discovery_met,
                     is_unlocked=is_unlocked,
                     can_craft=can_craft,
                     reason_code=reason_code,
@@ -349,7 +350,10 @@ class PlayableEconomyFacilityFacade:
         party = tuple(self._inn_member_summary(member) for member in self._playable.party_members)
         if not party:
             reason_code = "invalid_party"
-        elif any(member.max_hp <= 0 or member.max_sp < 0 for member in self._playable.party_members):
+        elif any(
+            member.max_hp <= 0 or member.max_sp < 0
+            for member in self._playable.party_members
+        ):
             reason_code = "invalid_party"
         elif gold < inn.stay_price:
             reason_code = "insufficient_gold"
