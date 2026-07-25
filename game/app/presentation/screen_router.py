@@ -61,6 +61,14 @@ class RouteTransitionKind(str, Enum):
 class SteamDemoRouteState:
     route_stack: tuple[SteamDemoRouteId, ...] = (SteamDemoRouteId.TOP_MENU,)
 
+    def __post_init__(self) -> None:
+        if not self.route_stack:
+            raise ValueError("route_stack must not be empty")
+        if self.route_stack[0] != SteamDemoRouteId.TOP_MENU:
+            raise ValueError("route_stack must start with top menu")
+        if SteamDemoRouteId.TOP_MENU in self.route_stack[1:]:
+            raise ValueError("top menu cannot appear after the root route")
+
     @property
     def current_route(self) -> SteamDemoRouteId:
         return self.route_stack[-1]
@@ -99,6 +107,15 @@ class SteamDemoScreenRouter:
     ) -> None:
         self._top_screen = top_screen
         self._route_by_flow = dict(route_by_flow or DEFAULT_ROUTE_BY_FLOW)
+        invalid_root_flows = tuple(
+            flow_id.value
+            for flow_id, route_id in self._route_by_flow.items()
+            if route_id == SteamDemoRouteId.TOP_MENU
+        )
+        if invalid_root_flows:
+            raise ValueError(
+                f"subflow route cannot use top menu: {invalid_root_flows}"
+            )
         self._state = SteamDemoRouteState()
 
     @property
