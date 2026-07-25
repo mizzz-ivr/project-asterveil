@@ -1,0 +1,31 @@
+name: Diagnose Screen Factory Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run target tests
+        id: target
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python -m unittest tests.test_steam_demo_composition tests.test_shared_action_screen_controller -v 2>&1 | tee screen-factory-test.log
+      - name: Upload diagnostic log
+        uses: actions/upload-artifact@v4
+        with:
+          name: screen-factory-test-log
+          path: screen-factory-test.log
+      - name: Fail when tests failed
+        if: steps.target.outcome == 'failure'
+        run: exit 1
