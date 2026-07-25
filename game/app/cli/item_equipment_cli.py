@@ -39,7 +39,12 @@ def _print_item_use_view(view: ItemUseScreenViewModel) -> None:
 
 
 def run_item_use_screen(app: PlayableSliceApplication) -> list[str]:
-    controller = ItemUseScreenController(PlayablePartyMenuFacade(app))
+    return run_item_use_controller(
+        ItemUseScreenController(PlayablePartyMenuFacade(app))
+    )
+
+
+def run_item_use_controller(controller: ItemUseScreenController) -> list[str]:
     view = controller.current_view()
     _print_item_use_view(view)
     if not view.items:
@@ -116,7 +121,12 @@ def _print_equipment_view(view: EquipmentScreenViewModel) -> None:
 
 
 def run_equipment_screen(app: PlayableSliceApplication) -> list[str]:
-    controller = EquipmentScreenController(PlayablePartyMenuFacade(app))
+    return run_equipment_controller(
+        EquipmentScreenController(PlayablePartyMenuFacade(app))
+    )
+
+
+def run_equipment_controller(controller: EquipmentScreenController) -> list[str]:
     view = controller.current_view()
     _print_equipment_view(view)
     if not view.members:
