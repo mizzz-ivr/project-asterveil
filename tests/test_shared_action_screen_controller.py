@@ -158,10 +158,18 @@ class SteamDemoScreenControllerTests(SteamDemoControllerTestBase):
 
 
 class SteamDemoCliActionAdapterTests(SteamDemoControllerTestBase):
+    def build_router(
+        self,
+        save_path: Path,
+    ) -> tuple[PlayableSliceApplication, SteamDemoScreenRouter]:
+        playable, demo, _ = self.build_apps(save_path)
+        return playable, SteamDemoScreenRouter(
+            SteamDemoScreenController(playable, demo)
+        )
+
     def test_cli_adapter_runs_route_handler_and_returns_to_top(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            playable, demo, _ = self.build_apps(Path(directory) / "save.json")
-            router = SteamDemoScreenRouter(SteamDemoScreenController(playable, demo))
+            playable, router = self.build_router(Path(directory) / "save.json")
             original = run_steam_demo._CLI_ROUTE_HANDLERS[SteamDemoRouteId.QUEST_BOARD]
             run_steam_demo._CLI_ROUTE_HANDLERS[SteamDemoRouteId.QUEST_BOARD] = (
                 lambda _: ["cli_route_called:quest_board"]
@@ -178,6 +186,54 @@ class SteamDemoCliActionAdapterTests(SteamDemoControllerTestBase):
             self.assertEqual(["cli_route_called:quest_board"], logs)
             self.assertEqual(SteamDemoRouteId.TOP_MENU, router.state.current_route)
             self.assertEqual((SteamDemoRouteId.TOP_MENU,), router.state.route_stack)
+
+    def test_cli_adapter_recovers_when_route_handler_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            playable, router = self.build_router(Path(directory) / "save.json")
+            original = run_steam_demo._CLI_ROUTE_HANDLERS.pop(
+                SteamDemoRouteId.QUEST_BOARD
+            )
+            try:
+                logs = run_steam_demo._dispatch_action(
+                    playable,
+                    router,
+                    "quest_board",
+                )
+            finally:
+                run_steam_demo._CLI_ROUTE_HANDLERS[SteamDemoRouteId.QUEST_BOARD] = original
+
+            self.assertEqual(
+                [f"route_not_supported:{SteamDemoRouteId.QUEST_BOARD.value}"],
+                logs,
+            )
+            self.assertEqual(SteamDemoRouteId.TOP_MENU, router.state.current_route)
+
+    def test_cli_adapter_recovers_from_expected_application_rejection(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            playable, router = self.build_router(Path(directory) / "save.json")
+            original = run_steam_demo._CLI_ROUTE_HANDLERS[SteamDemoRouteId.QUEST_BOARD]
+
+            def rejected_handler(_: PlayableSliceApplication) -> list[str]:
+                raise ValueError("expected rejection")
+
+            run_steam_demo._CLI_ROUTE_HANDLERS[SteamDemoRouteId.QUEST_BOARD] = rejected_handler
+            try:
+                logs = run_steam_demo._dispatch_action(
+                    playable,
+                    router,
+                    "quest_board",
+                )
+            finally:
+                run_steam_demo._CLI_ROUTE_HANDLERS[SteamDemoRouteId.QUEST_BOARD] = original
+
+            self.assertEqual(
+                [
+                    f"route_handler_rejected:{SteamDemoRouteId.QUEST_BOARD.value}:"
+                    "expected rejection"
+                ],
+                logs,
+            )
+            self.assertEqual(SteamDemoRouteId.TOP_MENU, router.state.current_route)
 
 
 if __name__ == "__main__":
