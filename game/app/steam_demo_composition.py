@@ -101,7 +101,8 @@ class SteamDemoScreenFactory:
         builders: Mapping[SteamDemoRouteId, ScreenBuilder] | None = None,
     ) -> None:
         self._playable = playable
-        self._builders = dict(builders or self._default_builders())
+        source_builders = self._default_builders() if builders is None else builders
+        self._builders = dict(source_builders)
         self._validate_registry()
 
     def registered_routes(self) -> tuple[SteamDemoRouteId, ...]:
