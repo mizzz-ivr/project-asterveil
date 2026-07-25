@@ -11,21 +11,13 @@ from game.app.application.playable_slice import PlayableSliceApplication
 from game.app.cli import run_game_slice as base_cli
 from game.app.cli.item_equipment_cli import run_equipment_screen, run_item_use_screen
 from game.app.infrastructure.demo_flow_repository import DemoFlowMasterDataRepository
-from game.app.presentation.action_controller import (
-    ActionDispatchKind,
-    SteamDemoActionController,
-    SteamDemoFlowId,
-)
 from game.app.presentation.gathering_treasure_screen import (
     GatheringScreenController,
     GatheringScreenViewModel,
     TreasureScreenController,
     TreasureScreenViewModel,
 )
-from game.app.presentation.menu_view_model import (
-    SteamDemoMenuPresenter,
-    SteamDemoMenuViewModel,
-)
+from game.app.presentation.menu_view_model import SteamDemoMenuViewModel
 from game.app.presentation.npc_field_event_screen import (
     FieldEventScreenController,
     FieldEventScreenMode,
@@ -40,12 +32,18 @@ from game.app.presentation.quest_travel_screen import (
     TravelScreenController,
     TravelScreenViewModel,
 )
+from game.app.presentation.screen_controller import SteamDemoScreenController
+from game.app.presentation.screen_router import (
+    RouteTransitionKind,
+    SteamDemoRouteId,
+    SteamDemoScreenRouter,
+)
 
 
 DEFAULT_FLOW_ID = "demo.steam.ch01.core_loop"
 MASTER_ROOT = Path("data/master")
 
-CLIFlowHandler = Callable[[PlayableSliceApplication], list[str]]
+CLIRouteHandler = Callable[[PlayableSliceApplication], list[str]]
 
 
 def _print_lines(lines: list[str]) -> None:
@@ -313,44 +311,55 @@ def _run_treasure_screen(app: PlayableSliceApplication) -> list[str]:
     return list(controller.activate_node(selected).logs)
 
 
-_CLI_FLOW_HANDLERS: dict[SteamDemoFlowId, CLIFlowHandler] = {
-    SteamDemoFlowId.USE_ITEM: run_item_use_screen,
-    SteamDemoFlowId.EQUIPMENT: run_equipment_screen,
-    SteamDemoFlowId.SHOP: base_cli._run_shop_flow,
-    SteamDemoFlowId.EQUIPMENT_UPGRADE: base_cli._run_equipment_upgrade_flow,
-    SteamDemoFlowId.EQUIPMENT_SALVAGE: base_cli._run_equipment_salvage_flow,
-    SteamDemoFlowId.CRAFTING: base_cli._run_crafting_flow,
-    SteamDemoFlowId.INN: base_cli._run_inn_flow,
-    SteamDemoFlowId.QUEST_BOARD: _run_quest_board_screen,
-    SteamDemoFlowId.TRAVEL: _run_travel_screen,
-    SteamDemoFlowId.NPC_DIALOGUE: _run_npc_dialogue_screen,
-    SteamDemoFlowId.GATHERING: _run_gathering_screen,
-    SteamDemoFlowId.TREASURE: _run_treasure_screen,
-    SteamDemoFlowId.FIELD_EVENT: _run_field_event_screen,
+_CLI_ROUTE_HANDLERS: dict[SteamDemoRouteId, CLIRouteHandler] = {
+    SteamDemoRouteId.USE_ITEM: run_item_use_screen,
+    SteamDemoRouteId.EQUIPMENT: run_equipment_screen,
+    SteamDemoRouteId.SHOP: base_cli._run_shop_flow,
+    SteamDemoRouteId.EQUIPMENT_UPGRADE: base_cli._run_equipment_upgrade_flow,
+    SteamDemoRouteId.EQUIPMENT_SALVAGE: base_cli._run_equipment_salvage_flow,
+    SteamDemoRouteId.CRAFTING: base_cli._run_crafting_flow,
+    SteamDemoRouteId.INN: base_cli._run_inn_flow,
+    SteamDemoRouteId.QUEST_BOARD: _run_quest_board_screen,
+    SteamDemoRouteId.TRAVEL: _run_travel_screen,
+    SteamDemoRouteId.NPC_DIALOGUE: _run_npc_dialogue_screen,
+    SteamDemoRouteId.GATHERING: _run_gathering_screen,
+    SteamDemoRouteId.TREASURE: _run_treasure_screen,
+    SteamDemoRouteId.FIELD_EVENT: _run_field_event_screen,
 }
 
 
-def _run_cli_flow(
+def _run_cli_route(
     app: PlayableSliceApplication,
-    flow_id: SteamDemoFlowId,
+    route_id: SteamDemoRouteId,
 ) -> list[str]:
-    handler = _CLI_FLOW_HANDLERS.get(flow_id)
+    handler = _CLI_ROUTE_HANDLERS.get(route_id)
     if handler is None:
-        return [f"flow_not_supported:{flow_id.value}"]
+        return [f"route_not_supported:{route_id.value}"]
     return handler(app)
 
 
 def _dispatch_action(
     app: PlayableSliceApplication,
-    controller: SteamDemoActionController,
+    router: SteamDemoScreenRouter,
     selected: str,
 ) -> list[str]:
-    result = controller.dispatch(selected)
-    if result.kind == ActionDispatchKind.FLOW_REQUIRED:
-        if result.flow_id is None:
-            return [f"flow_dispatch_failed:missing_flow_id:{selected}"]
-        return _run_cli_flow(app, result.flow_id)
-    return list(result.logs)
+    transition = router.activate_top_action(selected)
+    if transition.kind != RouteTransitionKind.PUSHED:
+        return list(transition.logs)
+
+    route_id = transition.state.current_route
+    if route_id not in _CLI_ROUTE_HANDLERS:
+        return list(
+            router.cancel_current_route(
+                logs=(f"route_not_supported:{route_id.value}",),
+            ).logs
+        )
+
+    try:
+        logs = tuple(_run_cli_route(app, route_id))
+    except ValueError as exc:
+        logs = (f"route_handler_rejected:{route_id.value}:{exc}",)
+    return list(router.complete_current_route(logs=logs).logs)
 
 
 def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
@@ -361,8 +370,6 @@ def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
         flow_service=DemoFlowService(definitions),
         flow_id=flow_id,
     )
-    presenter = SteamDemoMenuPresenter()
-    action_controller = SteamDemoActionController(app, demo)
 
     while True:
         print("\n=== Project Asterveil: Steam Demo ===")
@@ -384,9 +391,11 @@ def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
             if not ok:
                 continue
 
+        top_screen = SteamDemoScreenController(app, demo)
+        router = SteamDemoScreenRouter(top_screen)
         _print_lines(demo.guidance_lines())
         while True:
-            view = presenter.build(app, demo)
+            view = router.current_top_view()
             if view.is_completed:
                 print("\n--- Steamデモ チェックポイント到達 ---")
             else:
@@ -394,7 +403,7 @@ def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
             _print_menu_view(view)
 
             selected = base_cli._choose(_menu_choices(view))
-            logs = _dispatch_action(app, action_controller, selected)
+            logs = _dispatch_action(app, router, selected)
             _print_lines(logs)
             if selected == "exit":
                 break
