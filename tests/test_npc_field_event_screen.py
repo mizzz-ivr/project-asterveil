@@ -15,6 +15,8 @@ from game.app.presentation.npc_field_event_screen import (
     NpcDialogueScreenController,
     NpcDialogueScreenMode,
 )
+from game.app.presentation.screen_router import SteamDemoRouteId
+from game.app.steam_demo_composition import SteamDemoScreenFactory
 from game.quest.domain.entities import BattleResult
 
 
@@ -177,32 +179,38 @@ class FieldEventFacadeAndControllerTests(NpcFieldEventScreenTestBase):
 
 
 class SteamDemoCliNpcFieldEventAdapterTests(NpcFieldEventScreenTestBase):
-    def test_npc_dialogue_cli_uses_new_controller(self) -> None:
+    def test_npc_dialogue_cli_uses_factory_controller(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             app = self.build_app(Path(directory) / "save.json")
+            route_screen = SteamDemoScreenFactory(app).create(
+                SteamDemoRouteId.NPC_DIALOGUE
+            )
 
             with patch.object(
                 run_steam_demo.base_cli,
                 "_choose",
                 side_effect=[ELDER_ID, "choice.help"],
             ):
-                logs = run_steam_demo._run_npc_dialogue_screen(app)
+                logs = run_steam_demo._run_npc_dialogue_screen(route_screen)
 
             self.assertIn(f"quest_accepted:{FIRST_QUEST_ID}", logs)
             self.assertIn("flag.helped_npc", app.quest_session.world_flags)
 
-    def test_field_event_cli_uses_new_controller(self) -> None:
+    def test_field_event_cli_uses_factory_controller(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             app = self.build_app(Path(directory) / "save.json")
             app.accept_quest(FIRST_QUEST_ID)
             app.travel_to(FIELD_LOCATION_ID)
+            route_screen = SteamDemoScreenFactory(app).create(
+                SteamDemoRouteId.FIELD_EVENT
+            )
 
             with patch.object(
                 run_steam_demo.base_cli,
                 "_choose",
                 side_effect=[DRIFT_EVENT_ID, DRIFT_SAFE_CHOICE_ID],
             ):
-                logs = run_steam_demo._run_field_event_screen(app)
+                logs = run_steam_demo._run_field_event_screen(route_screen)
 
             self.assertTrue(any(line == f"field_event_resolved:{DRIFT_EVENT_ID}" for line in logs))
             self.assertIn(DRIFT_EVENT_ID, app.completed_field_event_ids)
