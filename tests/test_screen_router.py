@@ -15,6 +15,7 @@ from game.app.presentation.screen_router import (
     DEFAULT_ROUTE_BY_FLOW,
     RouteTransitionKind,
     SteamDemoRouteId,
+    SteamDemoRouteState,
     SteamDemoScreenRouter,
 )
 
@@ -56,8 +57,32 @@ class SteamDemoScreenRouterTests(unittest.TestCase):
             self.assertEqual((SteamDemoRouteId.TOP_MENU,), state.route_stack)
             self.assertEqual(SteamDemoRouteId.TOP_MENU, state.current_route)
             self.assertFalse(state.can_go_back)
-            self.assertIn(SteamDemoRouteId.QUEST_BOARD.value, serialized)
+            self.assertIn(SteamDemoRouteId.TOP_MENU.value, serialized)
+            self.assertIn(SteamDemoRouteId.QUEST_BOARD, router.registered_routes())
             self.assertEqual(len(SteamDemoFlowId), len(router.registered_routes()))
+
+    def test_route_state_and_mapping_reject_invalid_root_structure(self) -> None:
+        with self.assertRaisesRegex(ValueError, "must not be empty"):
+            SteamDemoRouteState(route_stack=tuple())
+        with self.assertRaisesRegex(ValueError, "must start with top menu"):
+            SteamDemoRouteState(route_stack=(SteamDemoRouteId.TRAVEL,))
+        with self.assertRaisesRegex(ValueError, "cannot appear after"):
+            SteamDemoRouteState(
+                route_stack=(
+                    SteamDemoRouteId.TOP_MENU,
+                    SteamDemoRouteId.TRAVEL,
+                    SteamDemoRouteId.TOP_MENU,
+                )
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            invalid_routes = dict(DEFAULT_ROUTE_BY_FLOW)
+            invalid_routes[SteamDemoFlowId.TRAVEL] = SteamDemoRouteId.TOP_MENU
+            with self.assertRaisesRegex(ValueError, "cannot use top menu"):
+                self.build_router(
+                    Path(directory) / "save.json",
+                    route_by_flow=invalid_routes,
+                )
 
     def test_top_action_pushes_route_and_completion_returns_to_top(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
