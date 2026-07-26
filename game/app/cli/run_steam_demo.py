@@ -58,20 +58,19 @@ from game.app.presentation.quest_travel_screen import (
 from game.app.presentation.screen_router import (
     RouteTransitionKind,
     SteamDemoRouteId,
-    SteamDemoScreenRouter,
 )
-from game.app.steam_demo_composition import (
-    SteamDemoCompositionRoot,
-    SteamDemoRouteScreen,
-    SteamDemoScreenFactory,
+from game.app.presentation.screen_runtime import (
+    SteamDemoRouteScreenProtocol,
+    SteamDemoScreenRuntime,
 )
+from game.app.steam_demo_composition import SteamDemoCompositionRoot
 
 
 DEFAULT_FLOW_ID = "demo.steam.ch01.core_loop"
 MASTER_ROOT = Path("data/master")
 
 ControllerT = TypeVar("ControllerT")
-CLIRouteHandler = Callable[[SteamDemoRouteScreen], list[str]]
+CLIRouteHandler = Callable[[SteamDemoRouteScreenProtocol], list[str]]
 
 
 def _print_lines(lines: list[str]) -> None:
@@ -93,7 +92,7 @@ def _menu_choices(view: SteamDemoMenuViewModel) -> list[tuple[str, str]]:
 
 
 def _require_controller(
-    route_screen: SteamDemoRouteScreen,
+    route_screen: SteamDemoRouteScreenProtocol,
     expected_type: type[ControllerT],
 ) -> ControllerT:
     controller = route_screen.controller
@@ -118,7 +117,7 @@ def _print_quest_board_view(view: QuestBoardScreenViewModel) -> None:
         )
 
 
-def _run_quest_board_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
+def _run_quest_board_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
     controller = _require_controller(route_screen, QuestBoardScreenController)
     view = controller.current_view()
     _print_quest_board_view(view)
@@ -150,7 +149,7 @@ def _print_travel_view(view: TravelScreenViewModel) -> None:
         )
 
 
-def _run_travel_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
+def _run_travel_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
     controller = _require_controller(route_screen, TravelScreenController)
     view = controller.current_view()
     _print_travel_view(view)
@@ -192,7 +191,7 @@ def _print_npc_dialogue_view(view: NpcDialogueScreenViewModel) -> None:
         print(f"- choice:{choice.choice_id}:{choice.text}")
 
 
-def _run_npc_dialogue_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
+def _run_npc_dialogue_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
     controller = _require_controller(route_screen, NpcDialogueScreenController)
     view = controller.current_view()
     _print_npc_dialogue_view(view)
@@ -252,7 +251,7 @@ def _print_field_event_view(view: FieldEventScreenViewModel) -> None:
         print(f"- field_event_choice:{choice.choice_id}:{choice.text}")
 
 
-def _run_field_event_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
+def _run_field_event_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
     controller = _require_controller(route_screen, FieldEventScreenController)
     view = controller.current_view()
     _print_field_event_view(view)
@@ -301,7 +300,7 @@ def _print_gathering_view(view: GatheringScreenViewModel) -> None:
             print(f"- gathering_respawn:{node.node_id}:{node.respawn_description}")
 
 
-def _run_gathering_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
+def _run_gathering_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
     controller = _require_controller(route_screen, GatheringScreenController)
     view = controller.current_view()
     _print_gathering_view(view)
@@ -334,7 +333,7 @@ def _print_treasure_view(view: TreasureScreenViewModel) -> None:
         print(f"- treasure_desc:{node.reward_node_id}:{node.description}")
 
 
-def _run_treasure_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
+def _run_treasure_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
     controller = _require_controller(route_screen, TreasureScreenController)
     view = controller.current_view()
     _print_treasure_view(view)
@@ -353,41 +352,45 @@ def _run_treasure_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
     return list(controller.activate_node(selected).logs)
 
 
-def _run_item_use_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
+def _run_item_use_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
     return run_item_use_controller(
         _require_controller(route_screen, ItemUseScreenController)
     )
 
 
-def _run_equipment_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
+def _run_equipment_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
     return run_equipment_controller(
         _require_controller(route_screen, EquipmentScreenController)
     )
 
 
-def _run_shop_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
+def _run_shop_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
     return run_shop_controller(_require_controller(route_screen, ShopScreenController))
 
 
-def _run_equipment_upgrade_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
+def _run_equipment_upgrade_screen(
+    route_screen: SteamDemoRouteScreenProtocol,
+) -> list[str]:
     return run_equipment_upgrade_controller(
         _require_controller(route_screen, EquipmentUpgradeScreenController)
     )
 
 
-def _run_equipment_salvage_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
+def _run_equipment_salvage_screen(
+    route_screen: SteamDemoRouteScreenProtocol,
+) -> list[str]:
     return run_equipment_salvage_controller(
         _require_controller(route_screen, EquipmentSalvageScreenController)
     )
 
 
-def _run_crafting_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
+def _run_crafting_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
     return run_crafting_controller(
         _require_controller(route_screen, CraftingScreenController)
     )
 
 
-def _run_inn_screen(route_screen: SteamDemoRouteScreen) -> list[str]:
+def _run_inn_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
     return run_inn_controller(_require_controller(route_screen, InnScreenController))
 
 
@@ -408,39 +411,42 @@ _CLI_ROUTE_HANDLERS: dict[SteamDemoRouteId, CLIRouteHandler] = {
 }
 
 
-def _run_cli_route(
-    screen_factory: SteamDemoScreenFactory,
-    route_id: SteamDemoRouteId,
-) -> list[str]:
-    handler = _CLI_ROUTE_HANDLERS.get(route_id)
+def _run_cli_route(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
+    handler = _CLI_ROUTE_HANDLERS.get(route_screen.route_id)
     if handler is None:
-        return [f"route_not_supported:{route_id.value}"]
-    route_screen = screen_factory.create(route_id)
+        return [f"route_not_supported:{route_screen.route_id.value}"]
     return handler(route_screen)
 
 
 def _dispatch_action(
-    router: SteamDemoScreenRouter,
-    screen_factory: SteamDemoScreenFactory,
+    runtime: SteamDemoScreenRuntime,
     selected: str,
 ) -> list[str]:
-    transition = router.activate_top_action(selected)
-    if transition.kind != RouteTransitionKind.PUSHED:
-        return list(transition.logs)
+    opened = runtime.activate_top_action(selected)
+    if opened.transition.kind != RouteTransitionKind.PUSHED:
+        return list(opened.logs)
 
-    route_id = transition.state.current_route
+    route_id = opened.frame.route_id
     if route_id not in _CLI_ROUTE_HANDLERS:
         return list(
-            router.cancel_current_route(
+            runtime.cancel_current_route(
                 logs=(f"route_not_supported:{route_id.value}",),
             ).logs
         )
 
+    route_screen = runtime.active_screen
+    if route_screen is None:
+        return list(
+            runtime.reset_to_top(
+                logs=(f"route_handler_rejected:{route_id.value}:active_screen_missing",),
+            ).logs
+        )
+
     try:
-        logs = tuple(_run_cli_route(screen_factory, route_id))
+        logs = tuple(_run_cli_route(route_screen))
     except (TypeError, ValueError) as exc:
         logs = (f"route_handler_rejected:{route_id.value}:{exc}",)
-    return list(router.complete_current_route(logs=logs).logs)
+    return list(runtime.complete_current_route(logs=logs).logs)
 
 
 def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
@@ -475,7 +481,13 @@ def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
         composition = SteamDemoCompositionRoot.build(app, demo)
         _print_lines(demo.guidance_lines())
         while True:
-            view = composition.router.current_top_view()
+            frame = composition.runtime.current_frame()
+            if not isinstance(frame.view, SteamDemoMenuViewModel):
+                raise RuntimeError(
+                    "steam_demo_top_view_type_mismatch:"
+                    f"{type(frame.view).__name__}"
+                )
+            view = frame.view
             if view.is_completed:
                 print("\n--- Steamデモ チェックポイント到達 ---")
             else:
@@ -483,11 +495,7 @@ def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
             _print_menu_view(view)
 
             selected = base_cli._choose(_menu_choices(view))
-            logs = _dispatch_action(
-                composition.router,
-                composition.screen_factory,
-                selected,
-            )
+            logs = _dispatch_action(composition.runtime, selected)
             _print_lines(logs)
             if selected == "exit":
                 break
