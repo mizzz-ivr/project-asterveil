@@ -157,6 +157,7 @@ class SteamDemoScreenRuntime:
                     "screen_factory_route_mismatch:"
                     f"expected={route_id.value}:actual={route_screen.route_id.value}"
                 )
+            view = route_screen.controller.current_view()
         except (TypeError, ValueError) as exc:
             logs = (f"screen_open_rejected:{route_id.value}:{exc}",)
             rollback = self._router.cancel_current_route(logs=logs)
@@ -176,7 +177,7 @@ class SteamDemoScreenRuntime:
             )
 
         self._active_screen = route_screen
-        return self._result(transition)
+        return self._result(transition, view=view)
 
     def _handle_subscreen_input(
         self,
