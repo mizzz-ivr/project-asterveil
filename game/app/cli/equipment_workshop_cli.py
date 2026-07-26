@@ -39,9 +39,14 @@ def _print_upgrade_view(view: EquipmentUpgradeScreenViewModel) -> None:
 
 
 def run_equipment_upgrade_screen(app: PlayableSliceApplication) -> list[str]:
-    controller = EquipmentUpgradeScreenController(
-        PlayableEquipmentWorkshopFacade(app)
+    return run_equipment_upgrade_controller(
+        EquipmentUpgradeScreenController(PlayableEquipmentWorkshopFacade(app))
     )
+
+
+def run_equipment_upgrade_controller(
+    controller: EquipmentUpgradeScreenController,
+) -> list[str]:
     view = controller.current_view()
     _print_upgrade_view(view)
     if not view.options:
@@ -88,9 +93,14 @@ def _print_salvage_view(view: EquipmentSalvageScreenViewModel) -> None:
 
 
 def run_equipment_salvage_screen(app: PlayableSliceApplication) -> list[str]:
-    controller = EquipmentSalvageScreenController(
-        PlayableEquipmentWorkshopFacade(app)
+    return run_equipment_salvage_controller(
+        EquipmentSalvageScreenController(PlayableEquipmentWorkshopFacade(app))
     )
+
+
+def run_equipment_salvage_controller(
+    controller: EquipmentSalvageScreenController,
+) -> list[str]:
     view = controller.current_view()
     _print_salvage_view(view)
     if not view.options:

@@ -13,6 +13,8 @@ from game.app.presentation.quest_travel_screen import (
     TravelScreenController,
     TravelScreenPresenter,
 )
+from game.app.presentation.screen_router import SteamDemoRouteId
+from game.app.steam_demo_composition import SteamDemoScreenFactory
 from game.quest.domain.entities import QuestBoardStatus
 
 
@@ -171,25 +173,29 @@ class TravelScreenTests(QuestTravelScreenTestBase):
 
 
 class QuestTravelCliAdapterTests(QuestTravelScreenTestBase):
-    def test_quest_board_cli_uses_new_controller(self) -> None:
+    def test_quest_board_cli_uses_factory_controller(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             app = self.build_app(Path(directory) / "save.json")
+            route_screen = SteamDemoScreenFactory(app).create(
+                SteamDemoRouteId.QUEST_BOARD
+            )
             original_choose = run_steam_demo.base_cli._choose
             run_steam_demo.base_cli._choose = lambda _: FIRST_QUEST_ID
             try:
-                logs = run_steam_demo._run_quest_board_screen(app)
+                logs = run_steam_demo._run_quest_board_screen(route_screen)
             finally:
                 run_steam_demo.base_cli._choose = original_choose
 
             self.assertEqual([f"quest_accepted:{FIRST_QUEST_ID}"], logs)
 
-    def test_travel_cli_uses_new_controller(self) -> None:
+    def test_travel_cli_uses_factory_controller(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             app = self.build_app(Path(directory) / "save.json")
+            route_screen = SteamDemoScreenFactory(app).create(SteamDemoRouteId.TRAVEL)
             original_choose = run_steam_demo.base_cli._choose
             run_steam_demo.base_cli._choose = lambda _: FIELD_LOCATION_ID
             try:
-                logs = run_steam_demo._run_travel_screen(app)
+                logs = run_steam_demo._run_travel_screen(route_screen)
             finally:
                 run_steam_demo.base_cli._choose = original_choose
 

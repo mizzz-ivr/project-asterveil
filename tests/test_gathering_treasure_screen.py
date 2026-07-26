@@ -13,6 +13,8 @@ from game.app.presentation.gathering_treasure_screen import (
     TreasureScreenController,
 )
 from game.app.presentation.input_actions import MenuInputAction
+from game.app.presentation.screen_router import SteamDemoRouteId
+from game.app.steam_demo_composition import SteamDemoScreenFactory
 
 
 TOWN_GATHERING_NODE_ID = "node.herb.astel_backyard_01"
@@ -184,30 +186,36 @@ class TreasureScreenControllerTests(GatheringTreasureScreenTestBase):
 
 
 class SteamDemoCliGatheringTreasureAdapterTests(GatheringTreasureScreenTestBase):
-    def test_gathering_cli_uses_new_controller(self) -> None:
+    def test_gathering_cli_uses_factory_controller(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             app = self.build_app(Path(directory) / "save.json")
+            route_screen = SteamDemoScreenFactory(app).create(
+                SteamDemoRouteId.GATHERING
+            )
 
             with patch.object(
                 run_steam_demo.base_cli,
                 "_choose",
                 return_value=TOWN_GATHERING_NODE_ID,
             ):
-                logs = run_steam_demo._run_gathering_screen(app)
+                logs = run_steam_demo._run_gathering_screen(route_screen)
 
             self.assertIn(f"gathered:{TOWN_GATHERING_NODE_ID}", logs)
             self.assertIn(TOWN_GATHERING_NODE_ID, app.gathered_node_ids)
 
-    def test_treasure_cli_uses_new_controller(self) -> None:
+    def test_treasure_cli_uses_factory_controller(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             app = self.build_app(Path(directory) / "save.json")
+            route_screen = SteamDemoScreenFactory(app).create(
+                SteamDemoRouteId.TREASURE
+            )
 
             with patch.object(
                 run_steam_demo.base_cli,
                 "_choose",
                 return_value=TOWN_TREASURE_ID,
             ):
-                logs = run_steam_demo._run_treasure_screen(app)
+                logs = run_steam_demo._run_treasure_screen(route_screen)
 
             self.assertIn(f"treasure_opened:{TOWN_TREASURE_ID}", logs)
             self.assertIn(TOWN_TREASURE_ID, app.opened_treasure_node_ids)

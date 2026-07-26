@@ -34,7 +34,10 @@ def _print_shop_view(view: ShopScreenViewModel) -> None:
 
 
 def run_shop_screen(app: PlayableSliceApplication) -> list[str]:
-    controller = ShopScreenController(PlayableEconomyFacilityFacade(app))
+    return run_shop_controller(ShopScreenController(PlayableEconomyFacilityFacade(app)))
+
+
+def run_shop_controller(controller: ShopScreenController) -> list[str]:
     view = controller.current_view()
     _print_shop_view(view)
     if not view.summary.success:
@@ -84,7 +87,12 @@ def _print_crafting_view(view: CraftingScreenViewModel) -> None:
 
 
 def run_crafting_screen(app: PlayableSliceApplication) -> list[str]:
-    controller = CraftingScreenController(PlayableEconomyFacilityFacade(app))
+    return run_crafting_controller(
+        CraftingScreenController(PlayableEconomyFacilityFacade(app))
+    )
+
+
+def run_crafting_controller(controller: CraftingScreenController) -> list[str]:
     view = controller.current_view()
     _print_crafting_view(view)
 
@@ -121,7 +129,10 @@ def _print_inn_view(view: InnScreenViewModel) -> None:
 
 
 def run_inn_screen(app: PlayableSliceApplication) -> list[str]:
-    controller = InnScreenController(PlayableEconomyFacilityFacade(app))
+    return run_inn_controller(InnScreenController(PlayableEconomyFacilityFacade(app)))
+
+
+def run_inn_controller(controller: InnScreenController) -> list[str]:
     view = controller.current_view()
     _print_inn_view(view)
     if not view.summary.success:
