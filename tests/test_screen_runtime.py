@@ -139,11 +139,12 @@ class SteamDemoScreenRuntimeTests(ScreenRuntimeTestBase):
 
             runtime.activate_top_action("quest_board")
             cancelled = runtime.cancel_current_route(logs=("cancelled_by_host",))
-            runtime.activate_top_action("travel")
+            reopened = runtime.activate_top_action("quest_board")
             reset = runtime.reset_to_top(logs=("session_reset",))
 
             self.assertEqual(RouteTransitionKind.POPPED, cancelled.transition.kind)
             self.assertEqual(("cancelled_by_host",), cancelled.logs)
+            self.assertEqual(RouteTransitionKind.PUSHED, reopened.transition.kind)
             self.assertEqual(RouteTransitionKind.RESET, reset.transition.kind)
             self.assertEqual(("session_reset",), reset.logs)
             self.assertEqual(SteamDemoRouteId.TOP_MENU, reset.frame.route_id)
