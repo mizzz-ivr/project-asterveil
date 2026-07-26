@@ -8,12 +8,12 @@ from pathlib import Path
 from game.app.application.demo_flow_service import DemoFlowService, SteamDemoApplication
 from game.app.application.playable_slice import PlayableSliceApplication
 from game.app.infrastructure.demo_flow_repository import DemoFlowMasterDataRepository
+from game.app.presentation.action_controller import SteamDemoFlowId
 from game.app.presentation.input_actions import MenuInputAction
 from game.app.presentation.quest_travel_screen import QuestBoardScreenController
 from game.app.presentation.screen_controller import SteamDemoScreenController
 from game.app.presentation.screen_router import (
     RouteTransitionKind,
-    SteamDemoFlowId,
     SteamDemoRouteId,
     SteamDemoScreenRouter,
 )
@@ -103,11 +103,12 @@ class SteamDemoScreenRuntimeTests(ScreenRuntimeTestBase):
             active_before = runtime.active_screen
 
             moved = runtime.handle_input(MenuInputAction.MOVE_DOWN)
+            active_after_move = runtime.active_screen
             cancelled = runtime.handle_input(MenuInputAction.CANCEL)
 
             self.assertEqual(RouteTransitionKind.STAY, moved.transition.kind)
             self.assertEqual(SteamDemoRouteId.QUEST_BOARD, moved.frame.route_id)
-            self.assertIs(active_before, runtime.active_screen if not cancelled.frame.is_top_menu else active_before)
+            self.assertIs(active_before, active_after_move)
             self.assertEqual(RouteTransitionKind.POPPED, cancelled.transition.kind)
             self.assertEqual(SteamDemoRouteId.TOP_MENU, cancelled.frame.route_id)
             self.assertIsNone(runtime.active_screen)
