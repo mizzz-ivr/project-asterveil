@@ -87,6 +87,20 @@ class SteamDemoSceneBuilderRegistryTests(ScreenRendererTestBase):
         with self.assertRaisesRegex(ValueError, "invalid_scene_builder_registry"):
             SteamDemoSceneBuilderRegistry(builders={})
 
+    def test_rejects_builder_that_returns_different_route(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            _, composition = self.build_composition(Path(directory) / "save.json")
+            base_registry = SteamDemoSceneBuilderRegistry()
+            builders = dict(base_registry._builders)
+            builders[SteamDemoRouteId.TOP_MENU] = lambda _: SteamDemoSceneModel(
+                route_id=SteamDemoRouteId.QUEST_BOARD,
+                title="Wrong Route",
+            )
+            registry = SteamDemoSceneBuilderRegistry(builders=builders)
+
+            with self.assertRaisesRegex(ValueError, "scene_builder_route_mismatch"):
+                registry.build_frame(composition.runtime.current_frame())
+
     def test_composition_root_builds_independent_scene_registries(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             playable, first = self.build_composition(Path(directory) / "save.json")
