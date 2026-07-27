@@ -91,7 +91,15 @@ class SteamDemoSceneBuilderRegistryTests(ScreenRendererTestBase):
         with tempfile.TemporaryDirectory() as directory:
             _, composition = self.build_composition(Path(directory) / "save.json")
             base_registry = SteamDemoSceneBuilderRegistry()
-            builders = dict(base_registry._builders)
+            builders = {
+                route_id: (
+                    lambda view, current_route=route_id: base_registry.build(
+                        current_route,
+                        view,
+                    )
+                )
+                for route_id in base_registry.registered_routes()
+            }
             builders[SteamDemoRouteId.TOP_MENU] = lambda _: SteamDemoSceneModel(
                 route_id=SteamDemoRouteId.QUEST_BOARD,
                 title="Wrong Route",
