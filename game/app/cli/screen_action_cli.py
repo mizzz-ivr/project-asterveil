@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Protocol
+from typing import Callable, Protocol, TypeAlias
 
 from game.app.presentation.screen_action_dispatcher import (
     SteamDemoSceneActionDispatcher,
@@ -22,14 +22,14 @@ class CliScreenActionResult:
     rejection_reason: str | None = None
 
 
-ControllerAction: type = Callable[[str], ControllerInteractionProtocol]
+ControllerAction: TypeAlias = Callable[[str], ControllerInteractionProtocol]
 
 
 def activate_entry(
     *,
     route_id: SteamDemoRouteId,
     entry_id: str,
-    controller_action: Callable[[str], ControllerInteractionProtocol],
+    controller_action: ControllerAction,
     dispatcher: SteamDemoSceneActionDispatcher | None = None,
 ) -> CliScreenActionResult:
     if dispatcher is None:
