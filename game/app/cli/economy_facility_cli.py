@@ -5,6 +5,7 @@ from game.app.application.playable_economy_facility_facade import (
 )
 from game.app.application.playable_slice import PlayableSliceApplication
 from game.app.cli import run_game_slice as base_cli
+from game.app.cli.screen_action_cli import activate_entry
 from game.app.cli.screen_console_renderer import render_route_view
 from game.app.presentation.economy_facility_screen import (
     CraftingScreenController,
@@ -13,6 +14,9 @@ from game.app.presentation.economy_facility_screen import (
     InnScreenViewModel,
     ShopScreenController,
     ShopScreenViewModel,
+)
+from game.app.presentation.screen_action_dispatcher import (
+    SteamDemoSceneActionDispatcher,
 )
 from game.app.presentation.screen_router import SteamDemoRouteId
 
@@ -25,7 +29,10 @@ def run_shop_screen(app: PlayableSliceApplication) -> list[str]:
     return run_shop_controller(ShopScreenController(PlayableEconomyFacilityFacade(app)))
 
 
-def run_shop_controller(controller: ShopScreenController) -> list[str]:
+def run_shop_controller(
+    controller: ShopScreenController,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
     view = controller.current_view()
     _print_shop_view(view)
     if not view.summary.success:
@@ -43,7 +50,13 @@ def run_shop_controller(controller: ShopScreenController) -> list[str]:
     selected = base_cli._choose(choices)
     if selected == "cancel":
         return ["shop_purchase_cancelled"]
-    return list(controller.activate_item(selected).logs)
+    executed = activate_entry(
+        route_id=SteamDemoRouteId.SHOP,
+        entry_id=selected,
+        controller_action=controller.activate_item,
+        dispatcher=dispatcher,
+    )
+    return list(executed.logs)
 
 
 def _print_crafting_view(view: CraftingScreenViewModel) -> None:
@@ -56,7 +69,10 @@ def run_crafting_screen(app: PlayableSliceApplication) -> list[str]:
     )
 
 
-def run_crafting_controller(controller: CraftingScreenController) -> list[str]:
+def run_crafting_controller(
+    controller: CraftingScreenController,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
     view = controller.current_view()
     _print_crafting_view(view)
 
@@ -72,7 +88,13 @@ def run_crafting_controller(controller: CraftingScreenController) -> list[str]:
     selected = base_cli._choose(choices)
     if selected == "cancel":
         return ["craft_cancelled"]
-    return list(controller.activate_recipe(selected).logs)
+    executed = activate_entry(
+        route_id=SteamDemoRouteId.CRAFTING,
+        entry_id=selected,
+        controller_action=controller.activate_recipe,
+        dispatcher=dispatcher,
+    )
+    return list(executed.logs)
 
 
 def _print_inn_view(view: InnScreenViewModel) -> None:
@@ -83,7 +105,10 @@ def run_inn_screen(app: PlayableSliceApplication) -> list[str]:
     return run_inn_controller(InnScreenController(PlayableEconomyFacilityFacade(app)))
 
 
-def run_inn_controller(controller: InnScreenController) -> list[str]:
+def run_inn_controller(
+    controller: InnScreenController,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
     view = controller.current_view()
     _print_inn_view(view)
     if not view.summary.success:
@@ -99,4 +124,10 @@ def run_inn_controller(controller: InnScreenController) -> list[str]:
     )
     if selected == "cancel":
         return ["inn_cancelled"]
-    return list(controller.activate_stay(selected).logs)
+    executed = activate_entry(
+        route_id=SteamDemoRouteId.INN,
+        entry_id=selected,
+        controller_action=controller.activate_stay,
+        dispatcher=dispatcher,
+    )
+    return list(executed.logs)
