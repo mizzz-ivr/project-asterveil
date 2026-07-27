@@ -3,39 +3,18 @@ from __future__ import annotations
 from game.app.application.playable_party_menu_facade import PlayablePartyMenuFacade
 from game.app.application.playable_slice import PlayableSliceApplication
 from game.app.cli import run_game_slice as base_cli
+from game.app.cli.screen_console_renderer import render_route_view
 from game.app.presentation.item_equipment_screen import (
     EquipmentScreenController,
-    EquipmentScreenMode,
     EquipmentScreenViewModel,
     ItemUseScreenController,
-    ItemUseScreenMode,
     ItemUseScreenViewModel,
 )
+from game.app.presentation.screen_router import SteamDemoRouteId
 
 
 def _print_item_use_view(view: ItemUseScreenViewModel) -> None:
-    if view.mode == ItemUseScreenMode.ITEM_LIST:
-        print(f"- usable_items:count={len(view.items)}")
-        for item in view.items:
-            print(
-                f"- usable_item:{item.item_id}:{item.name}:amount={item.amount}:"
-                f"effect={item.effect_type}:{item.effect_value}:target={item.target_scope}"
-            )
-            if item.description:
-                print(f"- usable_item_desc:{item.item_id}:{item.description}")
-        return
-
-    selected_item = view.selected_item
-    if selected_item is None:
-        return
-    print(f"- item_targets:item={selected_item.item_id}:count={len(view.targets)}")
-    for target in view.targets:
-        member = target.member
-        print(
-            f"- item_target:{member.character_id}:"
-            f"hp={member.current_hp}/{member.max_hp}:sp={member.current_sp}/{member.max_sp}:"
-            f"can_use={target.can_use}:reason={target.reason_code}"
-        )
+    render_route_view(SteamDemoRouteId.USE_ITEM, view)
 
 
 def run_item_use_screen(app: PlayableSliceApplication) -> list[str]:
@@ -83,41 +62,7 @@ def run_item_use_controller(controller: ItemUseScreenController) -> list[str]:
 
 
 def _print_equipment_view(view: EquipmentScreenViewModel) -> None:
-    if view.mode == EquipmentScreenMode.MEMBER_LIST:
-        print(f"- equipment_members:count={len(view.members)}")
-        for member in view.members:
-            print(
-                f"- equipment_member:{member.character_id}:lv={member.level}:"
-                f"hp={member.current_hp}/{member.max_hp}:sp={member.current_sp}/{member.max_sp}:"
-                f"atk={member.atk}:def={member.defense}:spd={member.spd}"
-            )
-        return
-
-    if view.mode == EquipmentScreenMode.SLOT_LIST:
-        member_id = view.selected_member.character_id if view.selected_member else "unknown"
-        print(f"- equipment_slots:member={member_id}:count={len(view.slots)}")
-        for slot in view.slots:
-            print(
-                f"- equipment_slot:{slot.slot_type}:"
-                f"current={slot.current_equipment_id or 'none'}:"
-                f"name={slot.current_equipment_name or '未装備'}"
-            )
-        return
-
-    member_id = view.selected_member.character_id if view.selected_member else "unknown"
-    slot_type = view.selected_slot.slot_type if view.selected_slot else "unknown"
-    print(
-        f"- equipment_options:member={member_id}:slot={slot_type}:"
-        f"count={len(view.equipment_options)}"
-    )
-    for option in view.equipment_options:
-        print(
-            f"- equipment_option:{option.equipment_id}:{option.name}:"
-            f"owned={option.owned}:available={option.available}:current={option.is_current}:"
-            f"can_equip={option.can_equip}:upgrade={option.upgrade_level}:"
-            f"hp={option.hp_bonus}:sp={option.sp_bonus}:atk={option.atk_bonus}:"
-            f"def={option.defense_bonus}:spd={option.spd_bonus}"
-        )
+    render_route_view(SteamDemoRouteId.EQUIPMENT, view)
 
 
 def run_equipment_screen(app: PlayableSliceApplication) -> list[str]:
