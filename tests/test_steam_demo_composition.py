@@ -33,6 +33,7 @@ from game.app.presentation.quest_travel_screen import (
     TravelScreenController,
 )
 from game.app.presentation.screen_router import SteamDemoRouteId
+from game.app.presentation.screen_runtime import SteamDemoScreenRuntime
 from game.app.steam_demo_composition import (
     SteamDemoCompositionRoot,
     SteamDemoScreenFactory,
@@ -131,7 +132,7 @@ class SteamDemoScreenFactoryTests(SteamDemoCompositionTestBase):
 
 
 class SteamDemoCompositionRootTests(SteamDemoCompositionTestBase):
-    def test_composition_root_builds_top_screen_router_and_factory(self) -> None:
+    def test_composition_root_builds_top_screen_router_factory_and_runtime(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             playable, demo = self.build_apps(Path(directory) / "save.json")
 
@@ -149,6 +150,12 @@ class SteamDemoCompositionRootTests(SteamDemoCompositionTestBase):
                 (SteamDemoRouteId.TOP_MENU,),
                 composition.router.state.route_stack,
             )
+            self.assertIsInstance(composition.runtime, SteamDemoScreenRuntime)
+            self.assertIs(composition.router, composition.runtime.router)
+            self.assertEqual(
+                SteamDemoRouteId.TOP_MENU,
+                composition.runtime.current_frame().route_id,
+            )
 
     def test_composition_root_builds_independent_session_objects(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -160,6 +167,9 @@ class SteamDemoCompositionRootTests(SteamDemoCompositionTestBase):
             self.assertIsNot(first.top_screen, second.top_screen)
             self.assertIsNot(first.router, second.router)
             self.assertIsNot(first.screen_factory, second.screen_factory)
+            self.assertIsNot(first.runtime, second.runtime)
+            self.assertIs(first.router, first.runtime.router)
+            self.assertIs(second.router, second.runtime.router)
 
 
 if __name__ == "__main__":

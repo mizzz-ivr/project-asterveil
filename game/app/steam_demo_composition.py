@@ -44,6 +44,7 @@ from game.app.presentation.screen_router import (
     SteamDemoRouteId,
     SteamDemoScreenRouter,
 )
+from game.app.presentation.screen_runtime import SteamDemoScreenRuntime
 
 
 SteamDemoSubScreenController: TypeAlias = (
@@ -184,6 +185,7 @@ class SteamDemoSessionComposition:
     top_screen: SteamDemoScreenController
     router: SteamDemoScreenRouter
     screen_factory: SteamDemoScreenFactory
+    runtime: SteamDemoScreenRuntime
 
 
 class SteamDemoCompositionRoot:
@@ -197,8 +199,10 @@ class SteamDemoCompositionRoot:
         top_screen = SteamDemoScreenController(playable, demo)
         router = SteamDemoScreenRouter(top_screen)
         screen_factory = SteamDemoScreenFactory(playable)
+        runtime = SteamDemoScreenRuntime(router, screen_factory)
         return SteamDemoSessionComposition(
             top_screen=top_screen,
             router=router,
             screen_factory=screen_factory,
+            runtime=runtime,
         )
