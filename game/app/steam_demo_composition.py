@@ -40,6 +40,7 @@ from game.app.presentation.quest_travel_screen import (
     TravelScreenController,
 )
 from game.app.presentation.screen_controller import SteamDemoScreenController
+from game.app.presentation.screen_renderer import SteamDemoSceneBuilderRegistry
 from game.app.presentation.screen_router import (
     SteamDemoRouteId,
     SteamDemoScreenRouter,
@@ -186,6 +187,7 @@ class SteamDemoSessionComposition:
     router: SteamDemoScreenRouter
     screen_factory: SteamDemoScreenFactory
     runtime: SteamDemoScreenRuntime
+    scene_registry: SteamDemoSceneBuilderRegistry
 
 
 class SteamDemoCompositionRoot:
@@ -200,9 +202,11 @@ class SteamDemoCompositionRoot:
         router = SteamDemoScreenRouter(top_screen)
         screen_factory = SteamDemoScreenFactory(playable)
         runtime = SteamDemoScreenRuntime(router, screen_factory)
+        scene_registry = SteamDemoSceneBuilderRegistry()
         return SteamDemoSessionComposition(
             top_screen=top_screen,
             router=router,
             screen_factory=screen_factory,
             runtime=runtime,
+            scene_registry=scene_registry,
         )
