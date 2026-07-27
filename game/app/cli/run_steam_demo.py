@@ -20,6 +20,10 @@ from game.app.cli.item_equipment_cli import (
     run_equipment_controller,
     run_item_use_controller,
 )
+from game.app.cli.screen_console_renderer import (
+    render_route_view,
+    render_runtime_frame,
+)
 from game.app.infrastructure.demo_flow_repository import DemoFlowMasterDataRepository
 from game.app.presentation.economy_facility_screen import (
     CraftingScreenController,
@@ -79,8 +83,7 @@ def _print_lines(lines: list[str]) -> None:
 
 
 def _print_menu_view(view: SteamDemoMenuViewModel) -> None:
-    print(f"- demo_menu_progress:{view.progress_label}")
-    print(f"- demo_menu_objective:{view.objective_title}:{view.objective_text}")
+    render_route_view(SteamDemoRouteId.TOP_MENU, view)
 
 
 def _menu_choices(view: SteamDemoMenuViewModel) -> list[tuple[str, str]]:
@@ -106,15 +109,7 @@ def _require_controller(
 
 
 def _print_quest_board_view(view: QuestBoardScreenViewModel) -> None:
-    print(
-        f"- quest_board:active={view.active_quest_count}/{view.max_active_quests}:"
-        f"entries={len(view.entries)}"
-    )
-    for entry in view.entries:
-        print(
-            f"- quest:{entry.quest_id}:{entry.title}:status={entry.status_label}:"
-            f"can_accept={entry.can_accept}:progress={entry.progress_label}"
-        )
+    render_route_view(SteamDemoRouteId.QUEST_BOARD, view)
 
 
 def _run_quest_board_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
@@ -138,15 +133,7 @@ def _run_quest_board_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[
 
 
 def _print_travel_view(view: TravelScreenViewModel) -> None:
-    print(
-        f"- current_location:{view.current_location_id}:{view.current_location_name}:"
-        f"destinations={len(view.destinations)}"
-    )
-    for destination in view.destinations:
-        print(
-            f"- destination:{destination.location_id}:{destination.name}:"
-            f"type={destination.location_type}"
-        )
+    render_route_view(SteamDemoRouteId.TRAVEL, view)
 
 
 def _run_travel_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
@@ -172,23 +159,7 @@ def _run_travel_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
 
 
 def _print_npc_dialogue_view(view: NpcDialogueScreenViewModel) -> None:
-    if view.mode == NpcDialogueScreenMode.NPC_LIST:
-        print(f"- npc_list:count={len(view.npcs)}")
-        for npc in view.npcs:
-            print(f"- npc:{npc.npc_id}:{npc.npc_name}:location={npc.location_id}")
-        return
-
-    dialogue = view.dialogue
-    if dialogue is None:
-        return
-    print(
-        f"- dialogue:{dialogue.npc_id}:{dialogue.npc_name}:"
-        f"entry={dialogue.entry_id or 'fallback'}:step={dialogue.step_id or 'completed'}"
-    )
-    for line in dialogue.lines:
-        print(f"- line:{dialogue.speaker or dialogue.npc_name}:{line}")
-    for choice in dialogue.choices:
-        print(f"- choice:{choice.choice_id}:{choice.text}")
+    render_route_view(SteamDemoRouteId.NPC_DIALOGUE, view)
 
 
 def _run_npc_dialogue_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
@@ -228,27 +199,7 @@ def _run_npc_dialogue_screen(route_screen: SteamDemoRouteScreenProtocol) -> list
 
 
 def _print_field_event_view(view: FieldEventScreenViewModel) -> None:
-    if view.mode == FieldEventScreenMode.EVENT_LIST:
-        print(f"- field_event_list:count={len(view.events)}")
-        for event in view.events:
-            print(
-                f"- field_event:{event.event_id}:{event.name}:"
-                f"can_execute={event.can_execute}:completed={event.is_completed}:"
-                f"repeatable={event.repeatable}:reason={event.reason_code}"
-            )
-            print(f"- field_event_desc:{event.event_id}:{event.description}")
-        return
-
-    detail = view.detail
-    if detail is None:
-        return
-    print(
-        f"- field_event_detail:{detail.event_id}:{detail.name}:"
-        f"repeatable={detail.repeatable}:completed={detail.is_completed}"
-    )
-    print(f"- field_event_desc:{detail.event_id}:{detail.description}")
-    for choice in detail.choices:
-        print(f"- field_event_choice:{choice.choice_id}:{choice.text}")
+    render_route_view(SteamDemoRouteId.FIELD_EVENT, view)
 
 
 def _run_field_event_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
@@ -285,19 +236,7 @@ def _run_field_event_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[
 
 
 def _print_gathering_view(view: GatheringScreenViewModel) -> None:
-    print(
-        f"- gathering_nodes:location={view.current_location_id}:"
-        f"count={len(view.nodes)}"
-    )
-    for node in view.nodes:
-        print(
-            f"- gathering_node:{node.node_id}:{node.name}:type={node.node_type}:"
-            f"can_gather={node.can_gather}:gathered={node.is_gathered}:"
-            f"reason={node.reason_code}:respawn_rule={node.respawn_rule}"
-        )
-        print(f"- gathering_desc:{node.node_id}:{node.description}")
-        if node.respawn_description:
-            print(f"- gathering_respawn:{node.node_id}:{node.respawn_description}")
+    render_route_view(SteamDemoRouteId.GATHERING, view)
 
 
 def _run_gathering_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
@@ -320,17 +259,7 @@ def _run_gathering_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[st
 
 
 def _print_treasure_view(view: TreasureScreenViewModel) -> None:
-    print(
-        f"- treasure_nodes:location={view.current_location_id}:"
-        f"count={len(view.nodes)}"
-    )
-    for node in view.nodes:
-        print(
-            f"- treasure_node:{node.reward_node_id}:{node.name}:type={node.node_type}:"
-            f"can_open={node.can_open}:opened={node.is_opened}:"
-            f"one_time={node.one_time}:reason={node.reason_code}"
-        )
-        print(f"- treasure_desc:{node.reward_node_id}:{node.description}")
+    render_route_view(SteamDemoRouteId.TREASURE, view)
 
 
 def _run_treasure_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
@@ -492,7 +421,7 @@ def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
                 print("\n--- Steamデモ チェックポイント到達 ---")
             else:
                 print("\n--- Steamデモ メニュー ---")
-            _print_menu_view(view)
+            render_runtime_frame(frame)
 
             selected = base_cli._choose(_menu_choices(view))
             logs = _dispatch_action(composition.runtime, selected)
