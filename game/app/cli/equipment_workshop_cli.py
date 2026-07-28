@@ -5,12 +5,16 @@ from game.app.application.playable_equipment_workshop_facade import (
 )
 from game.app.application.playable_slice import PlayableSliceApplication
 from game.app.cli import run_game_slice as base_cli
+from game.app.cli.screen_action_cli import activate_entry
 from game.app.cli.screen_console_renderer import render_route_view
 from game.app.presentation.equipment_workshop_screen import (
     EquipmentSalvageScreenController,
     EquipmentSalvageScreenViewModel,
     EquipmentUpgradeScreenController,
     EquipmentUpgradeScreenViewModel,
+)
+from game.app.presentation.screen_action_dispatcher import (
+    SteamDemoSceneActionDispatcher,
 )
 from game.app.presentation.screen_router import SteamDemoRouteId
 
@@ -27,6 +31,7 @@ def run_equipment_upgrade_screen(app: PlayableSliceApplication) -> list[str]:
 
 def run_equipment_upgrade_controller(
     controller: EquipmentUpgradeScreenController,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
 ) -> list[str]:
     view = controller.current_view()
     _print_upgrade_view(view)
@@ -48,7 +53,13 @@ def run_equipment_upgrade_controller(
     selected = base_cli._choose(choices)
     if selected == "cancel":
         return ["equipment_upgrade_cancelled"]
-    return list(controller.activate_equipment(selected).logs)
+    executed = activate_entry(
+        route_id=SteamDemoRouteId.EQUIPMENT_UPGRADE,
+        entry_id=selected,
+        controller_action=controller.activate_equipment,
+        dispatcher=dispatcher,
+    )
+    return list(executed.logs)
 
 
 def _print_salvage_view(view: EquipmentSalvageScreenViewModel) -> None:
@@ -63,6 +74,7 @@ def run_equipment_salvage_screen(app: PlayableSliceApplication) -> list[str]:
 
 def run_equipment_salvage_controller(
     controller: EquipmentSalvageScreenController,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
 ) -> list[str]:
     view = controller.current_view()
     _print_salvage_view(view)
@@ -84,4 +96,10 @@ def run_equipment_salvage_controller(
     selected = base_cli._choose(choices)
     if selected == "cancel":
         return ["equipment_salvage_cancelled"]
-    return list(controller.activate_equipment(selected).logs)
+    executed = activate_entry(
+        route_id=SteamDemoRouteId.EQUIPMENT_SALVAGE,
+        entry_id=selected,
+        controller_action=controller.activate_equipment,
+        dispatcher=dispatcher,
+    )
+    return list(executed.logs)

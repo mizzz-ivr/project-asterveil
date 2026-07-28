@@ -15,6 +15,7 @@ from game.app.presentation.action_controller import (
 )
 from game.app.presentation.input_actions import MenuInputAction
 from game.app.presentation.quest_travel_screen import QuestBoardScreenController
+from game.app.presentation.screen_action_dispatcher import SteamDemoSceneActionDispatcher
 from game.app.presentation.screen_controller import SteamDemoScreenController
 from game.app.presentation.screen_router import SteamDemoRouteId
 from game.app.presentation.screen_runtime import (
@@ -178,7 +179,10 @@ class SteamDemoCliActionAdapterTests(SteamDemoControllerTestBase):
             original = run_steam_demo._CLI_ROUTE_HANDLERS[SteamDemoRouteId.QUEST_BOARD]
             captured: list[SteamDemoRouteScreenProtocol] = []
 
-            def route_handler(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
+            def route_handler(
+                route_screen: SteamDemoRouteScreenProtocol,
+                _: SteamDemoSceneActionDispatcher | None,
+            ) -> list[str]:
                 captured.append(route_screen)
                 return ["cli_route_called:quest_board"]
 
@@ -228,7 +232,10 @@ class SteamDemoCliActionAdapterTests(SteamDemoControllerTestBase):
             _, runtime = self.build_runtime(Path(directory) / "save.json")
             original = run_steam_demo._CLI_ROUTE_HANDLERS[SteamDemoRouteId.QUEST_BOARD]
 
-            def rejected_handler(_: SteamDemoRouteScreenProtocol) -> list[str]:
+            def rejected_handler(
+                _: SteamDemoRouteScreenProtocol,
+                __: SteamDemoSceneActionDispatcher | None,
+            ) -> list[str]:
                 raise ValueError("expected rejection")
 
             run_steam_demo._CLI_ROUTE_HANDLERS[SteamDemoRouteId.QUEST_BOARD] = rejected_handler

@@ -20,6 +20,10 @@ from game.app.cli.item_equipment_cli import (
     run_equipment_controller,
     run_item_use_controller,
 )
+from game.app.cli.screen_action_cli import (
+    CliScreenActionResult,
+    activate_entry,
+)
 from game.app.cli.screen_console_renderer import (
     render_route_view,
     render_runtime_frame,
@@ -59,6 +63,9 @@ from game.app.presentation.quest_travel_screen import (
     TravelScreenController,
     TravelScreenViewModel,
 )
+from game.app.presentation.screen_action_dispatcher import (
+    SteamDemoSceneActionDispatcher,
+)
 from game.app.presentation.screen_router import (
     RouteTransitionKind,
     SteamDemoRouteId,
@@ -74,7 +81,10 @@ DEFAULT_FLOW_ID = "demo.steam.ch01.core_loop"
 MASTER_ROOT = Path("data/master")
 
 ControllerT = TypeVar("ControllerT")
-CLIRouteHandler = Callable[[SteamDemoRouteScreenProtocol], list[str]]
+CLIRouteHandler = Callable[
+    [SteamDemoRouteScreenProtocol, SteamDemoSceneActionDispatcher | None],
+    list[str],
+]
 
 
 def _print_lines(lines: list[str]) -> None:
@@ -108,11 +118,29 @@ def _require_controller(
     return controller
 
 
+def _activate_cli_entry(
+    *,
+    route_id: SteamDemoRouteId,
+    entry_id: str,
+    controller_action,
+    dispatcher: SteamDemoSceneActionDispatcher | None,
+) -> CliScreenActionResult:
+    return activate_entry(
+        route_id=route_id,
+        entry_id=entry_id,
+        controller_action=controller_action,
+        dispatcher=dispatcher,
+    )
+
+
 def _print_quest_board_view(view: QuestBoardScreenViewModel) -> None:
     render_route_view(SteamDemoRouteId.QUEST_BOARD, view)
 
 
-def _run_quest_board_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
+def _run_quest_board_screen(
+    route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
     controller = _require_controller(route_screen, QuestBoardScreenController)
     view = controller.current_view()
     _print_quest_board_view(view)
@@ -129,14 +157,23 @@ def _run_quest_board_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[
     selected = base_cli._choose(choices)
     if selected == "cancel":
         return ["quest_accept_cancelled"]
-    return list(controller.activate_quest(selected).logs)
+    interaction = _activate_cli_entry(
+        route_id=SteamDemoRouteId.QUEST_BOARD,
+        entry_id=selected,
+        controller_action=controller.activate_quest,
+        dispatcher=dispatcher,
+    )
+    return list(interaction.logs)
 
 
 def _print_travel_view(view: TravelScreenViewModel) -> None:
     render_route_view(SteamDemoRouteId.TRAVEL, view)
 
 
-def _run_travel_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
+def _run_travel_screen(
+    route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
     controller = _require_controller(route_screen, TravelScreenController)
     view = controller.current_view()
     _print_travel_view(view)
@@ -155,14 +192,23 @@ def _run_travel_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
     selected = base_cli._choose(choices)
     if selected == "cancel":
         return ["travel_cancelled"]
-    return list(controller.activate_destination(selected).logs)
+    interaction = _activate_cli_entry(
+        route_id=SteamDemoRouteId.TRAVEL,
+        entry_id=selected,
+        controller_action=controller.activate_destination,
+        dispatcher=dispatcher,
+    )
+    return list(interaction.logs)
 
 
 def _print_npc_dialogue_view(view: NpcDialogueScreenViewModel) -> None:
     render_route_view(SteamDemoRouteId.NPC_DIALOGUE, view)
 
 
-def _run_npc_dialogue_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
+def _run_npc_dialogue_screen(
+    route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
     controller = _require_controller(route_screen, NpcDialogueScreenController)
     view = controller.current_view()
     _print_npc_dialogue_view(view)
@@ -175,11 +221,17 @@ def _run_npc_dialogue_screen(route_screen: SteamDemoRouteScreenProtocol) -> list
     if selected_npc == "cancel":
         return ["dialogue_cancelled"]
 
-    interaction = controller.activate_npc(selected_npc)
+    interaction = _activate_cli_entry(
+        route_id=SteamDemoRouteId.NPC_DIALOGUE,
+        entry_id=selected_npc,
+        controller_action=controller.activate_npc,
+        dispatcher=dispatcher,
+    )
     logs = list(interaction.logs)
-    while interaction.view.mode == NpcDialogueScreenMode.DIALOGUE:
-        _print_npc_dialogue_view(interaction.view)
-        dialogue = interaction.view.dialogue
+    dialogue_view = interaction.view
+    while dialogue_view.mode == NpcDialogueScreenMode.DIALOGUE:
+        _print_npc_dialogue_view(dialogue_view)
+        dialogue = dialogue_view.dialogue
         if dialogue is None or dialogue.completed or not dialogue.choices:
             break
         choice_options = [("cancel", "会話をやめる")]
@@ -191,7 +243,13 @@ def _run_npc_dialogue_screen(route_screen: SteamDemoRouteScreenProtocol) -> list
         if selected_choice == "cancel":
             logs.append("dialogue_cancelled")
             break
-        interaction = controller.activate_choice(selected_choice)
+        interaction = _activate_cli_entry(
+            route_id=SteamDemoRouteId.NPC_DIALOGUE,
+            entry_id=selected_choice,
+            controller_action=controller.activate_choice,
+            dispatcher=dispatcher,
+        )
+        dialogue_view = interaction.view
         logs.extend(interaction.logs)
         if interaction.rejection_reason is not None:
             break
@@ -202,7 +260,10 @@ def _print_field_event_view(view: FieldEventScreenViewModel) -> None:
     render_route_view(SteamDemoRouteId.FIELD_EVENT, view)
 
 
-def _run_field_event_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
+def _run_field_event_screen(
+    route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
     controller = _require_controller(route_screen, FieldEventScreenController)
     view = controller.current_view()
     _print_field_event_view(view)
@@ -216,11 +277,17 @@ def _run_field_event_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[
     if selected_event == "cancel":
         return ["field_event_cancelled"]
 
-    detail_interaction = controller.activate_event(selected_event)
+    detail_interaction = _activate_cli_entry(
+        route_id=SteamDemoRouteId.FIELD_EVENT,
+        entry_id=selected_event,
+        controller_action=controller.activate_event,
+        dispatcher=dispatcher,
+    )
     if detail_interaction.rejection_reason is not None:
         return list(detail_interaction.logs)
-    _print_field_event_view(detail_interaction.view)
-    detail = detail_interaction.view.detail
+    detail_view = detail_interaction.view
+    _print_field_event_view(detail_view)
+    detail = detail_view.detail
     if detail is None or not detail.choices:
         return [f"field_event_unavailable:no_choice:{selected_event}"]
 
@@ -232,14 +299,23 @@ def _run_field_event_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[
     selected_choice = base_cli._choose(choice_options)
     if selected_choice == "cancel":
         return ["field_event_cancelled"]
-    return list(controller.activate_choice(selected_choice).logs)
+    executed = _activate_cli_entry(
+        route_id=SteamDemoRouteId.FIELD_EVENT,
+        entry_id=selected_choice,
+        controller_action=controller.activate_choice,
+        dispatcher=dispatcher,
+    )
+    return list(executed.logs)
 
 
 def _print_gathering_view(view: GatheringScreenViewModel) -> None:
     render_route_view(SteamDemoRouteId.GATHERING, view)
 
 
-def _run_gathering_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
+def _run_gathering_screen(
+    route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
     controller = _require_controller(route_screen, GatheringScreenController)
     view = controller.current_view()
     _print_gathering_view(view)
@@ -255,14 +331,23 @@ def _run_gathering_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[st
     selected = base_cli._choose(choices)
     if selected == "cancel":
         return ["gather_cancelled"]
-    return list(controller.activate_node(selected).logs)
+    executed = _activate_cli_entry(
+        route_id=SteamDemoRouteId.GATHERING,
+        entry_id=selected,
+        controller_action=controller.activate_node,
+        dispatcher=dispatcher,
+    )
+    return list(executed.logs)
 
 
 def _print_treasure_view(view: TreasureScreenViewModel) -> None:
     render_route_view(SteamDemoRouteId.TREASURE, view)
 
 
-def _run_treasure_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
+def _run_treasure_screen(
+    route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
     controller = _require_controller(route_screen, TreasureScreenController)
     view = controller.current_view()
     _print_treasure_view(view)
@@ -278,49 +363,83 @@ def _run_treasure_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str
     selected = base_cli._choose(choices)
     if selected == "cancel":
         return ["treasure_open_cancelled"]
-    return list(controller.activate_node(selected).logs)
+    executed = _activate_cli_entry(
+        route_id=SteamDemoRouteId.TREASURE,
+        entry_id=selected,
+        controller_action=controller.activate_node,
+        dispatcher=dispatcher,
+    )
+    return list(executed.logs)
 
 
-def _run_item_use_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
+def _run_item_use_screen(
+    route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
     return run_item_use_controller(
-        _require_controller(route_screen, ItemUseScreenController)
+        _require_controller(route_screen, ItemUseScreenController),
+        dispatcher,
     )
 
 
-def _run_equipment_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
+def _run_equipment_screen(
+    route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
     return run_equipment_controller(
-        _require_controller(route_screen, EquipmentScreenController)
+        _require_controller(route_screen, EquipmentScreenController),
+        dispatcher,
     )
 
 
-def _run_shop_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
-    return run_shop_controller(_require_controller(route_screen, ShopScreenController))
+def _run_shop_screen(
+    route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
+    return run_shop_controller(
+        _require_controller(route_screen, ShopScreenController),
+        dispatcher,
+    )
 
 
 def _run_equipment_upgrade_screen(
     route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
 ) -> list[str]:
     return run_equipment_upgrade_controller(
-        _require_controller(route_screen, EquipmentUpgradeScreenController)
+        _require_controller(route_screen, EquipmentUpgradeScreenController),
+        dispatcher,
     )
 
 
 def _run_equipment_salvage_screen(
     route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
 ) -> list[str]:
     return run_equipment_salvage_controller(
-        _require_controller(route_screen, EquipmentSalvageScreenController)
+        _require_controller(route_screen, EquipmentSalvageScreenController),
+        dispatcher,
     )
 
 
-def _run_crafting_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
+def _run_crafting_screen(
+    route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
     return run_crafting_controller(
-        _require_controller(route_screen, CraftingScreenController)
+        _require_controller(route_screen, CraftingScreenController),
+        dispatcher,
     )
 
 
-def _run_inn_screen(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
-    return run_inn_controller(_require_controller(route_screen, InnScreenController))
+def _run_inn_screen(
+    route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
+    return run_inn_controller(
+        _require_controller(route_screen, InnScreenController),
+        dispatcher,
+    )
 
 
 _CLI_ROUTE_HANDLERS: dict[SteamDemoRouteId, CLIRouteHandler] = {
@@ -340,18 +459,26 @@ _CLI_ROUTE_HANDLERS: dict[SteamDemoRouteId, CLIRouteHandler] = {
 }
 
 
-def _run_cli_route(route_screen: SteamDemoRouteScreenProtocol) -> list[str]:
+def _run_cli_route(
+    route_screen: SteamDemoRouteScreenProtocol,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
+) -> list[str]:
     handler = _CLI_ROUTE_HANDLERS.get(route_screen.route_id)
     if handler is None:
         return [f"route_not_supported:{route_screen.route_id.value}"]
-    return handler(route_screen)
+    return handler(route_screen, dispatcher)
 
 
 def _dispatch_action(
     runtime: SteamDemoScreenRuntime,
     selected: str,
+    dispatcher: SteamDemoSceneActionDispatcher | None = None,
 ) -> list[str]:
-    opened = runtime.activate_top_action(selected)
+    opened = (
+        dispatcher.activate_entry(SteamDemoRouteId.TOP_MENU, selected)
+        if dispatcher is not None
+        else runtime.activate_top_action(selected)
+    )
     if opened.transition.kind != RouteTransitionKind.PUSHED:
         return list(opened.logs)
 
@@ -372,7 +499,7 @@ def _dispatch_action(
         )
 
     try:
-        logs = tuple(_run_cli_route(route_screen))
+        logs = tuple(_run_cli_route(route_screen, dispatcher))
     except (TypeError, ValueError) as exc:
         logs = (f"route_handler_rejected:{route_id.value}:{exc}",)
     return list(runtime.complete_current_route(logs=logs).logs)
@@ -424,7 +551,11 @@ def run_steam_demo(save_path: Path, flow_id: str = DEFAULT_FLOW_ID) -> int:
             render_runtime_frame(frame)
 
             selected = base_cli._choose(_menu_choices(view))
-            logs = _dispatch_action(composition.runtime, selected)
+            logs = _dispatch_action(
+                composition.runtime,
+                selected,
+                composition.action_dispatcher,
+            )
             _print_lines(logs)
             if selected == "exit":
                 break

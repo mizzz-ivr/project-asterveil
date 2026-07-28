@@ -39,6 +39,9 @@ from game.app.presentation.quest_travel_screen import (
     QuestBoardScreenController,
     TravelScreenController,
 )
+from game.app.presentation.screen_action_dispatcher import (
+    SteamDemoSceneActionDispatcher,
+)
 from game.app.presentation.screen_controller import SteamDemoScreenController
 from game.app.presentation.screen_renderer import SteamDemoSceneBuilderRegistry
 from game.app.presentation.screen_router import (
@@ -188,6 +191,7 @@ class SteamDemoSessionComposition:
     screen_factory: SteamDemoScreenFactory
     runtime: SteamDemoScreenRuntime
     scene_registry: SteamDemoSceneBuilderRegistry
+    action_dispatcher: SteamDemoSceneActionDispatcher
 
 
 class SteamDemoCompositionRoot:
@@ -203,10 +207,12 @@ class SteamDemoCompositionRoot:
         screen_factory = SteamDemoScreenFactory(playable)
         runtime = SteamDemoScreenRuntime(router, screen_factory)
         scene_registry = SteamDemoSceneBuilderRegistry()
+        action_dispatcher = SteamDemoSceneActionDispatcher(runtime, scene_registry)
         return SteamDemoSessionComposition(
             top_screen=top_screen,
             router=router,
             screen_factory=screen_factory,
             runtime=runtime,
             scene_registry=scene_registry,
+            action_dispatcher=action_dispatcher,
         )

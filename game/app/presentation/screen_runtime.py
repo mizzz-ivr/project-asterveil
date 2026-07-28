@@ -109,6 +109,26 @@ class SteamDemoScreenRuntime:
             return self._runtime_rejected("top_action_not_allowed_from_subroute")
         return self._apply_top_transition(self._router.activate_top_action(action_id))
 
+    def apply_subscreen_interaction(
+        self,
+        interaction: SteamDemoSubScreenInteractionProtocol,
+    ) -> SteamDemoRuntimeResult:
+        """Controller固有Actionの結果をRuntime状態へ共通反映する。"""
+        self._assert_synchronized()
+        if self._active_screen is None:
+            return self._runtime_rejected("subscreen_not_active")
+        return self._apply_subscreen_interaction(interaction)
+
+    def reject_current_action(
+        self,
+        reason_code: str,
+        *,
+        logs: tuple[str, ...] | None = None,
+    ) -> SteamDemoRuntimeResult:
+        """Dispatcherや描画アダプターの事前検証失敗を共通結果へ変換する。"""
+        self._assert_synchronized()
+        return self._runtime_rejected(reason_code, logs=logs)
+
     def complete_current_route(
         self,
         logs: tuple[str, ...] = tuple(),
@@ -188,15 +208,30 @@ class SteamDemoScreenRuntime:
 
         try:
             interaction = self._active_screen.controller.handle_input(action)
-            view = interaction.view
-            logs = self._validated_logs(interaction.logs)
-            cancel_requested = bool(interaction.cancel_requested)
-            rejection_reason = interaction.rejection_reason
         except ValueError as exc:
             return self._runtime_rejected(
                 "subscreen_input_rejected",
                 logs=(
                     f"screen_input_rejected:"
+                    f"{self._router.state.current_route.value}:{exc}",
+                ),
+            )
+        return self._apply_subscreen_interaction(interaction)
+
+    def _apply_subscreen_interaction(
+        self,
+        interaction: SteamDemoSubScreenInteractionProtocol,
+    ) -> SteamDemoRuntimeResult:
+        try:
+            view = interaction.view
+            logs = self._validated_logs(interaction.logs)
+            cancel_requested = bool(interaction.cancel_requested)
+            rejection_reason = interaction.rejection_reason
+        except (AttributeError, TypeError, ValueError) as exc:
+            return self._runtime_rejected(
+                "subscreen_interaction_invalid",
+                logs=(
+                    f"screen_interaction_rejected:"
                     f"{self._router.state.current_route.value}:{exc}",
                 ),
             )
