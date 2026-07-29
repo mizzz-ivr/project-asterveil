@@ -139,11 +139,9 @@ def verify_release_zip(zip_path: Path) -> None:
         f"{ARTIFACT_NAME}/_internal/data/master/demo_flows.sample.json",
     }
     with zipfile.ZipFile(zip_path, "r") as archive:
-        archive.testzip_result = archive.testzip()  # type: ignore[attr-defined]
-        if archive.testzip_result is not None:  # type: ignore[attr-defined]
-            raise RuntimeError(
-                f"release_zip_corrupted:{archive.testzip_result}"  # type: ignore[attr-defined]
-            )
+        corrupted_file = archive.testzip()
+        if corrupted_file is not None:
+            raise RuntimeError(f"release_zip_corrupted:{corrupted_file}")
         names = set(archive.namelist())
     missing = sorted(required_names - names)
     if missing:
@@ -171,9 +169,8 @@ def run_pyinstaller(project_root: Path, output_root: Path) -> Path:
     spec_path = project_root / "packaging" / "windows" / f"{APPLICATION_NAME}.spec"
     work_path = output_root / "pyinstaller-work"
     dist_path = output_root / "pyinstaller-dist"
-    spec_output_path = output_root / "pyinstaller-spec"
 
-    for path in (work_path, dist_path, spec_output_path):
+    for path in (work_path, dist_path):
         if path.exists():
             shutil.rmtree(path)
 
@@ -187,8 +184,6 @@ def run_pyinstaller(project_root: Path, output_root: Path) -> Path:
         str(work_path),
         "--distpath",
         str(dist_path),
-        "--specpath",
-        str(spec_output_path),
         str(spec_path),
     ]
     subprocess.run(command, cwd=project_root, check=True)
