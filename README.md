@@ -24,6 +24,7 @@ Project Asterveil は、重厚で感動的な長編ストーリー、戦略性�
 - [Steam Demo Screen Action Dispatcher](./docs/STEAM_DEMO_SCREEN_ACTION_DISPATCHER.md)
 - [Steam Demo Desktop Client](./docs/STEAM_DEMO_DESKTOP_CLIENT.md)
 - [Save Compatibility Policy](./docs/SAVE_COMPATIBILITY_POLICY.md)
+- [Windows Steam Demo Build](./docs/WINDOWS_STEAM_DEMO_BUILD.md)
 - [Quest Board / Travel Screen](./docs/QUEST_BOARD_TRAVEL_SCREEN.md)
 - [NPC Dialogue / Field Event Screen](./docs/NPC_DIALOGUE_FIELD_EVENT_SCREEN.md)
 - [Gathering / Treasure Screen](./docs/GATHERING_TREASURE_SCREEN.md)
@@ -60,6 +61,31 @@ Tkinterを利用できない環境では、以下のCLI版を利用します。
 python -m game.app.cli.run_steam_demo
 ```
 
+### GUIなしSmoke Test
+
+```bash
+python -m game.app.client.run_tk_steam_demo --smoke-test
+```
+
+## Windows配布Build
+
+Windows PowerShellでBuild依存を導入します。
+
+```powershell
+python -m pip install -r requirements-build.txt
+```
+
+配布フォルダ・マニフェスト・ZIPを生成し、exe Smoke Testまで実行します。
+
+```powershell
+python tools/build_windows_release.py `
+  --output-root build/windows-release `
+  --git-sha local `
+  --version-label development
+```
+
+詳細は[Windows Steam Demo Build](./docs/WINDOWS_STEAM_DEMO_BUILD.md)を参照してください。
+
 ## セーブ互換確認・移行
 
 Dry Run:
@@ -79,7 +105,7 @@ python -m game.save.cli.migrate_save path/to/save.json
 個別テスト:
 
 ```bash
-python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_screen_router tests.test_screen_runtime tests.test_screen_runtime_initialization tests.test_screen_renderer tests.test_screen_action_dispatcher tests.test_steam_demo_composition tests.test_steam_demo_client tests.test_save_slice tests.test_save_migration tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen tests.test_economy_facility_screen -v
+python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_screen_router tests.test_screen_runtime tests.test_screen_runtime_initialization tests.test_screen_renderer tests.test_screen_action_dispatcher tests.test_steam_demo_composition tests.test_steam_demo_client tests.test_windows_release_build tests.test_save_slice tests.test_save_migration tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen tests.test_economy_facility_screen -v
 ```
 
 ## Repository Bootstrap Structure
