@@ -25,6 +25,7 @@ Project Asterveil は、重厚で感動的な長編ストーリー、戦略性�
 - [Steam Demo Desktop Client](./docs/STEAM_DEMO_DESKTOP_CLIENT.md)
 - [Save Compatibility Policy](./docs/SAVE_COMPATIBILITY_POLICY.md)
 - [Windows Steam Demo Build](./docs/WINDOWS_STEAM_DEMO_BUILD.md)
+- [Steam Demo QA Gate](./docs/STEAM_DEMO_QA_GATE.md)
 - [Quest Board / Travel Screen](./docs/QUEST_BOARD_TRAVEL_SCREEN.md)
 - [NPC Dialogue / Field Event Screen](./docs/NPC_DIALOGUE_FIELD_EVENT_SCREEN.md)
 - [Gathering / Treasure Screen](./docs/GATHERING_TREASURE_SCREEN.md)
@@ -86,6 +87,32 @@ python tools/build_windows_release.py `
 
 詳細は[Windows Steam Demo Build](./docs/WINDOWS_STEAM_DEMO_BUILD.md)を参照してください。
 
+## Steamデモ公開前QA
+
+Build Manifestから手動QA Runを作成します。
+
+```bash
+python tools/steam_demo_qa.py init \
+  --manifest path/to/BUILD_MANIFEST.json \
+  --output-dir qa/runs/qa-<git-sha>-<utc> \
+  --tester tester-name \
+  --os-name Windows \
+  --os-version "11 24H2" \
+  --architecture x64 \
+  --resolution 1920x1080 \
+  --dpi-scale 100 \
+  --input keyboard_mouse
+```
+
+QA Runを検証し、レビュー用`SUMMARY.md`を生成します。
+
+```bash
+python tools/steam_demo_qa.py validate \
+  --report qa/runs/<run-id>/report.json
+```
+
+詳細は[Steam Demo QA Gate](./docs/STEAM_DEMO_QA_GATE.md)を参照してください。
+
 ## セーブ互換確認・移行
 
 Dry Run:
@@ -105,7 +132,7 @@ python -m game.save.cli.migrate_save path/to/save.json
 個別テスト:
 
 ```bash
-python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_screen_router tests.test_screen_runtime tests.test_screen_runtime_initialization tests.test_screen_renderer tests.test_screen_action_dispatcher tests.test_steam_demo_composition tests.test_steam_demo_client tests.test_windows_release_build tests.test_save_slice tests.test_save_migration tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen tests.test_economy_facility_screen -v
+python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_screen_router tests.test_screen_runtime tests.test_screen_runtime_initialization tests.test_screen_renderer tests.test_screen_action_dispatcher tests.test_steam_demo_composition tests.test_steam_demo_client tests.test_windows_release_build tests.test_steam_demo_qa tests.test_save_slice tests.test_save_migration tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen tests.test_economy_facility_screen -v
 ```
 
 ## Repository Bootstrap Structure
