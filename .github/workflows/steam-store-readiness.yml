@@ -1,0 +1,55 @@
+name: Steam Store Readiness Validation
+
+on:
+  push:
+    paths:
+      - 'release/steam/**'
+      - 'tools/steam_store_readiness*.py'
+      - 'tests/test_steam_store_readiness.py'
+      - 'docs/STEAM_STORE_READINESS.md'
+      - '.github/workflows/steam-store-readiness.yml'
+  pull_request:
+    paths:
+      - 'release/steam/**'
+      - 'tools/steam_store_readiness*.py'
+      - 'tests/test_steam_store_readiness.py'
+      - 'docs/STEAM_STORE_READINESS.md'
+      - '.github/workflows/steam-store-readiness.yml'
+
+jobs:
+  validate-steam-store-readiness:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Steam store readiness tests
+        run: python -m unittest tests.test_steam_store_readiness -v
+
+      - name: Validate readiness ledger and state
+        run: |
+          python tools/steam_store_readiness.py validate \
+            --definition release/steam/store_readiness_v1.json \
+            --state release/steam/store_readiness_status.json \
+            --summary release/steam/STORE_READINESS_SUMMARY.md
+
+      - name: Confirm initial release gate is not falsely approved
+        shell: bash
+        run: |
+          set +e
+          python tools/steam_store_readiness.py gate \
+            --definition release/steam/store_readiness_v1.json \
+            --state release/steam/store_readiness_status.json \
+            --gate demo_release
+          exit_code=$?
+          set -e
+          if [ "$exit_code" -ne 2 ]; then
+            echo "Expected demo_release gate to be incomplete (exit 2), got $exit_code"
+            exit 1
+          fi
