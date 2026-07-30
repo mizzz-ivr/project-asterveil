@@ -1,0 +1,45 @@
+name: Steam Demo QA Report Validation
+
+on:
+  push:
+    paths:
+      - 'qa/steam_demo/**'
+      - 'qa/runs/**/report.json'
+      - 'qa/runs/**/build_manifest.json'
+      - 'tools/steam_demo_qa.py'
+      - 'tests/test_steam_demo_qa.py'
+      - '.github/workflows/steam-demo-qa-report.yml'
+  pull_request:
+    paths:
+      - 'qa/steam_demo/**'
+      - 'qa/runs/**/report.json'
+      - 'qa/runs/**/build_manifest.json'
+      - 'tools/steam_demo_qa.py'
+      - 'tests/test_steam_demo_qa.py'
+      - '.github/workflows/steam-demo-qa-report.yml'
+
+jobs:
+  validate-qa-contract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run QA contract tests
+        run: python -m unittest tests.test_steam_demo_qa -v
+
+      - name: Validate committed QA runs
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find qa/runs -type f -name report.json -print -quit 2>/dev/null | grep -q .; then
+            python tools/steam_demo_qa.py validate-all --reports-root qa/runs
+          else
+            echo "No committed QA run reports were found; contract tests only."
+          fi
