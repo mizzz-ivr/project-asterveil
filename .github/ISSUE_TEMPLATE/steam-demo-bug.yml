@@ -1,0 +1,169 @@
+name: Steamデモ不具合報告
+description: 公開候補Buildの手動QAで発見した不具合を、Build・環境・再現条件とともに報告します。
+title: "[Steam Demo Bug] "
+labels:
+  - release:steam-demo
+body:
+  - type: markdown
+    attributes:
+      value: |
+        QA RunのCase結果と関連付けられるよう、Build Manifestの情報と再現手順を具体的に記載してください。
+        セーブデータやログに個人情報・秘密情報が含まれる場合は、そのまま添付しないでください。
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 重要度
+      description: 公開判断への影響を基準に選択してください。
+      options:
+        - blocker - QAまたは起動を継続できない
+        - critical - クラッシュ、セーブ破損、主要導線の進行不能
+        - high - 主要機能が利用不能だが回避策がある
+        - medium - 一部機能または表示に問題がある
+        - low - 軽微な表示・文言・操作感の問題
+    validations:
+      required: true
+
+  - type: input
+    id: qa_cases
+    attributes:
+      label: 関連QA Case ID
+      description: 例: BUILD-002, FLOW-004, SAVE-001
+      placeholder: FLOW-004
+    validations:
+      required: true
+
+  - type: input
+    id: artifact_name
+    attributes:
+      label: Artifact名
+      description: GitHub Actionsから取得したArtifact名を記載してください。
+      placeholder: project-asterveil-steam-demo-windows-x64-<git-sha>
+    validations:
+      required: true
+
+  - type: input
+    id: git_sha
+    attributes:
+      label: Git SHA
+      description: BUILD_MANIFEST.jsonのgit_shaを記載してください。
+      placeholder: 0123456789abcdef...
+    validations:
+      required: true
+
+  - type: input
+    id: manifest_sha256
+    attributes:
+      label: Build Manifest SHA-256
+      description: QA Run report.jsonのbuild.manifest_sha256を記載してください。
+      placeholder: sha256
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: 実行環境
+      description: OS Version、Architecture、解像度、DPI Scaleを記載してください。
+      placeholder: Windows 11 24H2 / x64 / 1920x1080 / 100%
+    validations:
+      required: true
+
+  - type: input
+    id: input_method
+    attributes:
+      label: 入力方式
+      placeholder: keyboard_mouse
+    validations:
+      required: true
+
+  - type: dropdown
+    id: save_state
+    attributes:
+      label: セーブ状態
+      options:
+        - セーブなし / New Game直後
+        - 通常のv1セーブ
+        - v0から読み込んだセーブ
+        - 破損・不正セーブの確認中
+        - その他
+    validations:
+      required: true
+
+  - type: textarea
+    id: prerequisites
+    attributes:
+      label: 前提状態
+      description: 現在地、クエスト状態、画面、直前に実行した操作を記載してください。
+      placeholder: |
+        - New Game開始後
+        - 最初の依頼を受注済み
+        - 対象ロケーションへ移動済み
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: 再現手順
+      description: 別の担当者が同じBuildで再現できる粒度で番号付きで記載してください。
+      placeholder: |
+        1. ProjectAsterveilSteamDemo.exeを起動する
+        2. Continueを選択する
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待結果
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の結果
+      description: エラー文言、停止した画面、状態変化を省略せず記載してください。
+    validations:
+      required: true
+
+  - type: textarea
+    id: frequency
+    attributes:
+      label: 再現頻度
+      placeholder: 5回中5回 / 初回のみ / 再現せず
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: ログ・エラー情報
+      description: 個人情報や秘密情報を除去したうえで、関連する範囲だけを記載または添付してください。
+      render: shell
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: スクリーンショット・動画・追加証跡
+      description: 添付ファイル、QA Run内の相対Path、関連コメントを記載してください。
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: 回避策
+      description: 回避できる場合のみ記載してください。
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: 確認事項
+      options:
+        - label: QA対象BuildのArtifact名とGit SHAをBUILD_MANIFEST.jsonから確認しました。
+          required: true
+        - label: 再現確認前に通常セーブをバックアップしました。
+          required: true
+        - label: 添付内容に個人情報・秘密情報が含まれていないことを確認しました。
+          required: true
