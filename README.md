@@ -26,6 +26,7 @@ Project Asterveil は、重厚で感動的な長編ストーリー、戦略性�
 - [Save Compatibility Policy](./docs/SAVE_COMPATIBILITY_POLICY.md)
 - [Windows Steam Demo Build](./docs/WINDOWS_STEAM_DEMO_BUILD.md)
 - [Steam Demo QA Gate](./docs/STEAM_DEMO_QA_GATE.md)
+- [Steam Store Readiness](./docs/STEAM_STORE_READINESS.md)
 - [Quest Board / Travel Screen](./docs/QUEST_BOARD_TRAVEL_SCREEN.md)
 - [NPC Dialogue / Field Event Screen](./docs/NPC_DIALOGUE_FIELD_EVENT_SCREEN.md)
 - [Gathering / Treasure Screen](./docs/GATHERING_TREASURE_SCREEN.md)
@@ -113,6 +114,28 @@ python tools/steam_demo_qa.py validate \
 
 詳細は[Steam Demo QA Gate](./docs/STEAM_DEMO_QA_GATE.md)を参照してください。
 
+## Steamストア公開準備
+
+Version付き台帳と現在状態を検証し、レビュー用Summaryを生成します。
+
+```bash
+python tools/steam_store_readiness.py validate \
+  --definition release/steam/store_readiness_v1.json \
+  --state release/steam/store_readiness_status.json \
+  --summary release/steam/STORE_READINESS_SUMMARY.md
+```
+
+デモ公開Gateを確認します。
+
+```bash
+python tools/steam_store_readiness.py gate \
+  --gate demo_release
+```
+
+初期状態は公開日、担当、素材、審査、QA承認が未確定のため、Gateは`INCOMPLETE`です。
+
+詳細は[Steam Store Readiness](./docs/STEAM_STORE_READINESS.md)を参照してください。
+
 ## セーブ互換確認・移行
 
 Dry Run:
@@ -132,7 +155,7 @@ python -m game.save.cli.migrate_save path/to/save.json
 個別テスト:
 
 ```bash
-python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_screen_router tests.test_screen_runtime tests.test_screen_runtime_initialization tests.test_screen_renderer tests.test_screen_action_dispatcher tests.test_steam_demo_composition tests.test_steam_demo_client tests.test_windows_release_build tests.test_steam_demo_qa tests.test_save_slice tests.test_save_migration tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen tests.test_economy_facility_screen -v
+python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_screen_router tests.test_screen_runtime tests.test_screen_runtime_initialization tests.test_screen_renderer tests.test_screen_action_dispatcher tests.test_steam_demo_composition tests.test_steam_demo_client tests.test_windows_release_build tests.test_steam_demo_qa tests.test_steam_store_readiness tests.test_save_slice tests.test_save_migration tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen tests.test_economy_facility_screen -v
 ```
 
 ## Repository Bootstrap Structure
