@@ -1,0 +1,506 @@
+{
+  "schema_version": 1,
+  "checklist_id": "steam-demo-publication-gate",
+  "checklist_version": 1,
+  "title": "Project Asterveil Steamデモ公開前手動QA",
+  "description": "Windows向け公開候補Buildについて、開始・進行・戦闘・クエスト・セーブ・復帰・基本UIの進行不能とクラッシュを確認する。",
+  "minimum_complete_environments": 1,
+  "release_blocking_defect_severities": [
+    "blocker",
+    "critical",
+    "high"
+  ],
+  "sections": [
+    {
+      "id": "build_startup",
+      "title": "配布物・起動",
+      "cases": [
+        {
+          "id": "BUILD-001",
+          "title": "配布ZIPとBuild Manifestの整合性を確認する",
+          "purpose": "破損・欠落・異なるCommitの成果物をQA対象にしない。",
+          "preconditions": [
+            "Windows Build Workflowが成功している",
+            "Artifact ZIPとBUILD_MANIFEST.jsonを取得している"
+          ],
+          "steps": [
+            "Artifact ZIPを新しい作業ディレクトリへ展開する",
+            "ProjectAsterveilSteamDemo.exe、README_RELEASE.txt、BUILD_MANIFEST.json、_internal/data/masterが存在することを確認する",
+            "QA Runに記録されたGit SHAとArtifact名がBuild Manifestと一致することを確認する"
+          ],
+          "expected_results": [
+            "ZIPをエラーなく展開できる",
+            "必須ファイルがすべて存在する",
+            "QA RunとBuild Manifestの識別情報が一致する"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["build", "artifact", "integrity"]
+        },
+        {
+          "id": "BUILD-002",
+          "title": "クリーンな状態からデスクトップクライアントを起動する",
+          "purpose": "配布exeが開発環境や作業ディレクトリに依存せず起動することを確認する。",
+          "preconditions": [
+            "過去のProject Asterveilプロセスが終了している",
+            "配布ZIPを展開済みである"
+          ],
+          "steps": [
+            "ProjectAsterveilSteamDemo.exeを起動する",
+            "タイトル画面が表示されるまで待つ",
+            "起動直後にエラーダイアログや予期しないコンソールが表示されないことを確認する"
+          ],
+          "expected_results": [
+            "クライアントがクラッシュせずタイトル画面へ到達する",
+            "New Game、Continue、Settings、Exitが判別できる",
+            "操作不能な重なりや表示欠落がない"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["startup", "client", "crash"]
+        },
+        {
+          "id": "BUILD-003",
+          "title": "配布exeのSmoke Testを実行する",
+          "purpose": "同梱マスターデータとNew Game初期化の最低限の健全性を確認する。",
+          "preconditions": [
+            "配布フォルダを展開済みである"
+          ],
+          "steps": [
+            "PowerShellからProjectAsterveilSteamDemo.exe --smoke-testを実行する",
+            "終了コードと標準出力を記録する"
+          ],
+          "expected_results": [
+            "終了コードが0である",
+            "マスターデータ読込、New Game、トップScene生成が成功したことを示す出力がある"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["smoke-test", "master-data", "new-game"]
+        }
+      ]
+    },
+    {
+      "id": "title_settings",
+      "title": "タイトル・設定・終了",
+      "cases": [
+        {
+          "id": "TITLE-001",
+          "title": "セーブなしではContinueが無効になる",
+          "purpose": "存在しないセーブを選択して操作不能になることを防ぐ。",
+          "preconditions": [
+            "対象ユーザーのSteamデモ用セーブを退避または削除している"
+          ],
+          "steps": [
+            "クライアントを起動する",
+            "Continueの状態を確認する",
+            "New Game、Settings、Exitが操作可能であることを確認する"
+          ],
+          "expected_results": [
+            "Continueが無効表示になる",
+            "他のタイトル操作は利用できる"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": false,
+          "tags": ["title", "continue", "empty-save"]
+        },
+        {
+          "id": "TITLE-002",
+          "title": "表示設定を変更してタイトルへ戻る",
+          "purpose": "設定画面から安全に戻れ、表示設定がクライアントへ反映されることを確認する。",
+          "preconditions": [
+            "タイトル画面を表示している"
+          ],
+          "steps": [
+            "Settingsを開く",
+            "文字サイズを100%、125%、150%へ順に変更する",
+            "ログ表示と入力ヒント表示を切り替える",
+            "タイトルへ戻る"
+          ],
+          "expected_results": [
+            "各設定操作でクラッシュしない",
+            "設定した表示状態が反映される",
+            "タイトルへ戻った後も操作可能である"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["settings", "font-scale", "navigation"]
+        },
+        {
+          "id": "TITLE-003",
+          "title": "Exitとウィンドウ終了で安全に終了する",
+          "purpose": "終了操作でプロセスが残留したりクラッシュ扱いにならないことを確認する。",
+          "preconditions": [
+            "タイトル画面を表示している"
+          ],
+          "steps": [
+            "Exitを選択してクライアントを終了する",
+            "再起動する",
+            "ウィンドウの閉じる操作で終了する",
+            "タスクマネージャーでプロセスが残っていないことを確認する"
+          ],
+          "expected_results": [
+            "どちらの終了方法でもエラーを表示せず終了する",
+            "終了後にProjectAsterveilSteamDemo.exeのプロセスが残らない"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": false,
+          "tags": ["exit", "process", "window-close"]
+        }
+      ]
+    },
+    {
+      "id": "core_flow",
+      "title": "Steamデモ主要進行",
+      "cases": [
+        {
+          "id": "FLOW-001",
+          "title": "New Gameから最初の目標を確認する",
+          "purpose": "初見プレイヤーが開始直後に次の操作を理解できることを確認する。",
+          "preconditions": [
+            "タイトル画面を表示している"
+          ],
+          "steps": [
+            "New Gameを選択する",
+            "ゲームプレイ画面と現在目標を確認する",
+            "推奨操作を確認する"
+          ],
+          "expected_results": [
+            "New Gameが完了しゲームプレイ画面へ遷移する",
+            "最初の依頼を受注する目標が表示される",
+            "次に選ぶ操作が判別できる"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["new-game", "guidance", "quest"]
+        },
+        {
+          "id": "FLOW-002",
+          "title": "最初の依頼を受注する",
+          "purpose": "クエストボードから最初の依頼を受注し、目標が次段階へ進むことを確認する。",
+          "preconditions": [
+            "New Game直後である"
+          ],
+          "steps": [
+            "クエストボードを開く",
+            "最初の依頼を選択する",
+            "受注後にトップへ戻る",
+            "現在目標を確認する"
+          ],
+          "expected_results": [
+            "依頼を受注できる",
+            "重複受注や操作不能が発生しない",
+            "現在目標が対象ロケーションへの移動へ更新される"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["quest", "accept", "progression"]
+        },
+        {
+          "id": "FLOW-003",
+          "title": "対象ロケーションへ移動する",
+          "purpose": "移動画面から目的地へ到達し、戦闘目標へ進めることを確認する。",
+          "preconditions": [
+            "最初の依頼を受注済みである"
+          ],
+          "steps": [
+            "移動画面を開く",
+            "対象ロケーションを選択する",
+            "移動後の現在地と現在目標を確認する"
+          ],
+          "expected_results": [
+            "対象ロケーションへ移動できる",
+            "現在地表示が更新される",
+            "現在目標が最初の戦闘勝利へ更新される"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["travel", "location", "progression"]
+        },
+        {
+          "id": "FLOW-004",
+          "title": "最初の戦闘に勝利する",
+          "purpose": "戦闘開始から結果反映まで進行不能やクラッシュなく完了できることを確認する。",
+          "preconditions": [
+            "対象ロケーションへ移動済みである",
+            "戦闘開始条件を満たしている"
+          ],
+          "steps": [
+            "討伐へ進む",
+            "行動を選択して戦闘を進める",
+            "勝利まで操作する",
+            "戦闘後のクエスト状態と現在目標を確認する"
+          ],
+          "expected_results": [
+            "戦闘が開始できる",
+            "行動選択とターン進行が停止しない",
+            "勝利結果がゲーム状態へ反映される",
+            "現在目標が依頼報告へ更新される"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["battle", "victory", "quest-progress"]
+        },
+        {
+          "id": "FLOW-005",
+          "title": "完了した依頼を報告する",
+          "purpose": "クエスト完了と報酬反映が一度だけ行われることを確認する。",
+          "preconditions": [
+            "最初の戦闘に勝利済みである"
+          ],
+          "steps": [
+            "報告操作を選択する",
+            "完了ログと報酬を確認する",
+            "現在目標を確認する",
+            "同じ依頼を再度報告できないことを確認する"
+          ],
+          "expected_results": [
+            "依頼を報告できる",
+            "報酬が一度だけ反映される",
+            "現在目標が工房確認へ更新される",
+            "重複報告が拒否される"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["quest", "report", "reward"]
+        },
+        {
+          "id": "FLOW-006",
+          "title": "工房とクラフトの入口を確認する",
+          "purpose": "クエスト後に工房導線へ進み、デモフローが次段階へ更新されることを確認する。",
+          "preconditions": [
+            "最初の依頼を報告済みである"
+          ],
+          "steps": [
+            "工房確認の推奨操作を実行する",
+            "クラフト画面を開く",
+            "レシピ一覧と材料状態を確認する",
+            "キャンセルしてトップへ戻る"
+          ],
+          "expected_results": [
+            "工房確認が記録される",
+            "クラフト画面を開いて戻れる",
+            "現在目標がデモチェックポイント保存へ更新される"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["workshop", "crafting", "progression"]
+        },
+        {
+          "id": "FLOW-007",
+          "title": "デモチェックポイントを保存する",
+          "purpose": "デモ完了状態をセーブへ含め、再開可能なチェックポイントを作成できることを確認する。",
+          "preconditions": [
+            "工房確認が完了している"
+          ],
+          "steps": [
+            "デモチェックポイント保存を実行する",
+            "保存成功ログを確認する",
+            "デモフローの完了表示を確認する"
+          ],
+          "expected_results": [
+            "セーブ処理が成功する",
+            "チェックポイントフラグが保存される",
+            "デモフロー完了が表示される"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["save", "checkpoint", "demo-complete"]
+        }
+      ]
+    },
+    {
+      "id": "save_continue",
+      "title": "セーブ・再開・異常データ",
+      "cases": [
+        {
+          "id": "SAVE-001",
+          "title": "終了後にContinueでデモ進行を復元する",
+          "purpose": "セーブ後の再起動で現在地・クエスト・デモ目標が失われないことを確認する。",
+          "preconditions": [
+            "デモチェックポイントを保存済みである"
+          ],
+          "steps": [
+            "ゲームプレイ内の終了操作でタイトルへ戻る",
+            "クライアントを終了して再起動する",
+            "Continueを選択する",
+            "現在地、クエスト状態、デモフロー状態を確認する"
+          ],
+          "expected_results": [
+            "Continueが有効である",
+            "セーブデータを読み込める",
+            "保存前の主要進行状態が復元される",
+            "デモフロー完了状態が再計算される"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["save", "continue", "restore"]
+        },
+        {
+          "id": "SAVE-002",
+          "title": "破損したセーブで安全にタイトルへ留まる",
+          "purpose": "不正セーブによってクライアント全体がクラッシュしたり原本を上書きしないことを確認する。",
+          "preconditions": [
+            "通常セーブを別名でバックアップしている",
+            "テスト用に不正JSONまたは不正Versionのセーブを配置している"
+          ],
+          "steps": [
+            "クライアントを起動する",
+            "Continueを選択する",
+            "表示された通知とクライアント状態を確認する",
+            "テスト用セーブが勝手に書き換えられていないことを確認する"
+          ],
+          "expected_results": [
+            "Continue失敗がユーザーへ通知される",
+            "クライアントがクラッシュせずタイトルへ留まる",
+            "不正セーブが自動上書きされない",
+            "New Game、Settings、Exitを引き続き利用できる"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["save", "corruption", "error-recovery"]
+        }
+      ]
+    },
+    {
+      "id": "navigation_ui",
+      "title": "入力・画面遷移・表示",
+      "cases": [
+        {
+          "id": "NAV-001",
+          "title": "全サブ画面で戻る操作がトップへ復帰する",
+          "purpose": "サブ画面から戻れず進行不能になる状態を検出する。",
+          "preconditions": [
+            "New Gameを開始している"
+          ],
+          "steps": [
+            "利用可能な各サブ画面を順に開く",
+            "EscまたはBackspaceで戻る",
+            "再度同じ画面を開けることを確認する"
+          ],
+          "expected_results": [
+            "戻る操作でトップ画面へ復帰する",
+            "戻った後に操作不能なControllerやRouteが残らない",
+            "同じサブ画面を再度開ける"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": false,
+          "tags": ["navigation", "cancel", "route"]
+        },
+        {
+          "id": "NAV-002",
+          "title": "キーボードの主要入力で選択・決定・戻るが動作する",
+          "purpose": "マウスを使用しなくても主要導線を進められることを確認する。",
+          "preconditions": [
+            "ゲームプレイ画面を表示している"
+          ],
+          "steps": [
+            "上矢印とWで上へ移動する",
+            "下矢印とSで下へ移動する",
+            "EnterとSpaceで決定する",
+            "EscとBackspaceで戻る",
+            "F1またはGでガイド操作を実行する"
+          ],
+          "expected_results": [
+            "各キーが対応する意味入力として動作する",
+            "同じキー入力が二重実行されない",
+            "無効操作後も入力を継続できる"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": false,
+          "tags": ["keyboard", "input", "accessibility"]
+        },
+        {
+          "id": "UI-001",
+          "title": "主要画面で文字・ボタン・ログが見切れない",
+          "purpose": "公開候補の標準表示環境で重要情報が欠落しないことを確認する。",
+          "preconditions": [
+            "QA Runへ解像度とDPI Scaleを記録している"
+          ],
+          "steps": [
+            "タイトル、設定、トップ、クエスト、移動、戦闘後、工房、セーブ通知を表示する",
+            "文字サイズ100%、125%、150%で主要情報を確認する",
+            "ウィンドウを最小化・復元する"
+          ],
+          "expected_results": [
+            "操作に必要な文字とボタンが判別できる",
+            "重要な通知やログが完全に隠れない",
+            "最小化・復元後も操作可能である"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["ui", "layout", "font-scale"]
+        }
+      ]
+    },
+    {
+      "id": "stability",
+      "title": "安定性・進行不能",
+      "cases": [
+        {
+          "id": "STABILITY-001",
+          "title": "主要導線を連続実行してクラッシュ・進行不能がない",
+          "purpose": "単一操作では検出できないRoute残留、状態不整合、長時間操作中のクラッシュを確認する。",
+          "preconditions": [
+            "新しいQA用セーブでNew Gameを開始している"
+          ],
+          "steps": [
+            "主要サブ画面の開閉を繰り返す",
+            "Steamデモ6段階の進行を完了する",
+            "保存、タイトル復帰、Continueを実行する",
+            "合計30分以上クライアントを操作する"
+          ],
+          "expected_results": [
+            "クライアントがクラッシュしない",
+            "操作不能、無限待機、入力無反応が発生しない",
+            "保存後の再開まで主要状態が一貫する"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["stability", "soak", "soft-lock", "crash"]
+        },
+        {
+          "id": "STABILITY-002",
+          "title": "予期しないエラー表示と再現可能な不具合を記録する",
+          "purpose": "公開判断時に既知問題が未記録のまま残ることを防ぐ。",
+          "preconditions": [
+            "すべてのRelease Blocking Caseを実施している"
+          ],
+          "steps": [
+            "QA中に表示された予期しないエラー、例外、操作拒否を一覧化する",
+            "再現できる問題をGitHub Issueへ登録する",
+            "Case結果とDefect IDを関連付ける",
+            "再現しない問題も環境・時刻・操作直前状態を記録する"
+          ],
+          "expected_results": [
+            "発見した問題がQA RunまたはGitHub Issueに記録される",
+            "blocker、critical、highの未解決問題が公開可否判定へ反映される"
+          ],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": false,
+          "tags": ["defect", "triage", "release-gate"]
+        }
+      ]
+    }
+  ]
+}
