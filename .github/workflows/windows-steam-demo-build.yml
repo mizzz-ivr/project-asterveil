@@ -1,0 +1,72 @@
+name: Windows Steam Demo Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'game/**'
+      - 'data/**'
+      - 'packaging/**'
+      - 'tools/build_windows_release.py'
+      - 'requirements-build.txt'
+      - '.github/workflows/windows-steam-demo-build.yml'
+  pull_request:
+    branches:
+      - '**'
+    paths:
+      - 'game/**'
+      - 'data/**'
+      - 'packaging/**'
+      - 'tools/build_windows_release.py'
+      - 'requirements-build.txt'
+      - '.github/workflows/windows-steam-demo-build.yml'
+      - 'tests/test_windows_release_build.py'
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows-steam-demo:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements-build.txt
+
+      - name: Install build dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-build.txt
+
+      - name: Run release helper tests
+        shell: pwsh
+        run: python -m unittest tests.test_windows_release_build tests.test_steam_demo_client -v
+
+      - name: Build and verify Windows release
+        shell: pwsh
+        run: |
+          python tools/build_windows_release.py `
+            --output-root build/windows-release `
+            --git-sha "${{ github.sha }}" `
+            --version-label "ci-${{ github.run_number }}"
+
+      - name: Upload Windows release artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: project-asterveil-steam-demo-windows-x64-${{ github.sha }}
+          path: |
+            build/windows-release/project-asterveil-steam-demo-windows-x64.zip
+            build/windows-release/project-asterveil-steam-demo-windows-x64/BUILD_MANIFEST.json
+          if-no-files-found: error
+          retention-days: 14
