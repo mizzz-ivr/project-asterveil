@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "composite_checklist_version": 2,
+  "checklist_id": "steam-demo-publication-gate",
+  "base_checklist": "checklist_v1.json",
+  "title": "Project Asterveil Steamデモ公開前手動QA v2",
+  "description": "v1の主要導線に、ゲームパッド、初回ガイド、アクセシビリティ、診断サポートの実機回帰を追加する。",
+  "sections": [
+    {
+      "id": "player_support_input",
+      "title": "ゲームパッド・入力切替",
+      "cases": [
+        {
+          "id": "INPUT-001",
+          "title": "XInputゲームパッドを接続して入力表示が切り替わる",
+          "purpose": "ゲームパッド接続後もキーボード表示のままになり、操作を誤認することを防ぐ。",
+          "preconditions": ["Windows向け公開候補Buildを起動している", "XInput互換ゲームパッドを用意している"],
+          "steps": ["ゲームパッド未接続で画面を表示する", "ゲームパッドを接続する", "D-padまたはAを操作する", "キーボードを操作する"],
+          "expected_results": ["接続状態が更新される", "ゲームパッド操作後にA/B/Yヒントへ切り替わる", "キーボード操作後にキーボードヒントへ戻る"],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["gamepad", "xinput", "input-switch"]
+        },
+        {
+          "id": "INPUT-002",
+          "title": "D-pad・左スティック・A・B・Yで主要操作を実行する",
+          "purpose": "マウスやキーボードなしで主要画面を操作できることを確認する。",
+          "preconditions": ["ゲームパッドを接続している", "New Gameを開始している"],
+          "steps": ["D-pad上下で移動する", "左スティック上下で移動する", "Aで決定する", "Bで戻る", "Yでガイドを開く"],
+          "expected_results": ["各物理入力が対応する意味操作として一度だけ動作する", "Bで戻れる", "YでRouteに応じたガイドが開く"],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["gamepad", "navigation", "guide"]
+        },
+        {
+          "id": "INPUT-003",
+          "title": "長押し・切断・再接続でも入力が暴走しない",
+          "purpose": "長押しによる過剰連打や切断後の押下状態残留を防ぐ。",
+          "preconditions": ["複数項目がある画面を表示している", "ゲームパッドを接続している"],
+          "steps": ["D-pad下を2秒以上長押しする", "Aを2秒以上長押しする", "入力中に切断する", "再接続して操作する"],
+          "expected_results": ["移動は一定間隔でリピートする", "決定は連続実行されない", "切断後に入力が残留しない", "再接続後に操作できる"],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["gamepad", "repeat", "disconnect"]
+        }
+      ]
+    },
+    {
+      "id": "player_support_guide",
+      "title": "初回ガイド・ヘルプ・アクセシビリティ",
+      "cases": [
+        {
+          "id": "GUIDE-001",
+          "title": "初回起動時にガイドが表示され、完了状態が保存される",
+          "purpose": "初見プレイヤーが目的と基本操作を理解せず離脱することを防ぐ。",
+          "preconditions": ["client_settings.jsonを退避または削除している"],
+          "steps": ["クライアントを起動する", "全9章を前後移動する", "最後の章で完了する", "再起動する"],
+          "expected_results": ["初回ガイドが自動表示される", "キーボードとゲームパッド操作が併記される", "再起動後は自動表示されない", "設定から再表示できる"],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["tutorial", "first-run", "persistence"]
+        },
+        {
+          "id": "GUIDE-002",
+          "title": "各主要Routeでコンテキストガイドを開く",
+          "purpose": "画面と無関係な説明が表示されることを防ぐ。",
+          "preconditions": ["New Gameを開始している"],
+          "steps": ["トップ、クエスト、移動、探索、工房、セーブ導線を開く", "各画面でF1/GまたはYを押す", "表示内容を確認する"],
+          "expected_results": ["Routeに応じた章が表示される", "閉じた後も元画面を操作できる", "ゲーム状態が変化しない"],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["guide", "context", "route"]
+        },
+        {
+          "id": "A11Y-001",
+          "title": "ハイコントラストと文字サイズを組み合わせる",
+          "purpose": "アクセシビリティ設定の組み合わせで重要情報が読めなくなることを防ぐ。",
+          "preconditions": ["Settingsを開いている"],
+          "steps": ["ハイコントラストを有効にする", "文字サイズを100%、125%、150%へ変更する", "主要画面を確認する", "再起動する"],
+          "expected_results": ["十分なコントラストがある", "選択中項目を判別できる", "主要ボタンが見切れない", "設定が再起動後も維持される"],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["accessibility", "contrast", "font-scale"]
+        },
+        {
+          "id": "A11Y-002",
+          "title": "設定ファイル破損時に既定値へ安全復旧する",
+          "purpose": "表示設定の破損によってクライアントが起動不能になることを防ぐ。",
+          "preconditions": ["client_settings.jsonをバックアップしている"],
+          "steps": ["設定を不正JSONへ置き換える", "クライアントを起動する", "復旧設定とバックアップを確認する"],
+          "expected_results": ["既定設定で起動する", "不正ファイルがinvalidバックアップとして保持される", "新しい正常設定が生成される"],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["settings", "corruption", "recovery"]
+        }
+      ]
+    },
+    {
+      "id": "player_support_diagnostics",
+      "title": "診断ログ・クラッシュレポート・サポートZIP",
+      "cases": [
+        {
+          "id": "SUPPORT-001",
+          "title": "操作と入力切替が構造化ログへ記録される",
+          "purpose": "再現不能な不具合の直前操作を追跡できるようにする。",
+          "preconditions": ["ローカル診断ログを有効にしている"],
+          "steps": ["入力方式を切り替える", "主要画面を開閉する", "NDJSONを確認する"],
+          "expected_results": ["時刻、Session、Category、Event、Contextが記録される", "入力方式切替と接続状態が記録される", "秘密情報はREDACTEDになる"],
+          "release_blocking": false,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["diagnostics", "ndjson", "redaction"]
+        },
+        {
+          "id": "SUPPORT-002",
+          "title": "予期しない例外でクラッシュレポートを生成する",
+          "purpose": "例外種別、画面、Route、Tracebackを調査可能にする。",
+          "preconditions": ["検証用に例外を発生させられる"],
+          "steps": ["検証用例外を発生させる", "画面の案内を確認する", "crashesのJSONを確認する"],
+          "expected_results": ["無言終了しない", "Crash JSONにSession、Phase、Route、Tracebackが含まれる", "終了またはZIP作成へ進める"],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["crash", "report", "traceback"]
+        },
+        {
+          "id": "SUPPORT-003",
+          "title": "サポートZIPに診断資料だけが含まれる",
+          "purpose": "セーブ本体や秘密情報を誤送付しない。",
+          "preconditions": ["通常セーブ、診断ログ、設定、クラッシュレポートが存在する"],
+          "steps": ["サポートZIPを作成する", "Manifestと全ファイルを確認する", "セーブメタデータを確認する"],
+          "expected_results": ["ログ、クラッシュ、設定、環境、Manifestが含まれる", "セーブ本体は含まれない", "サイズ、SHA-256、Versionだけが記録される", "自動アップロードされない"],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["support-bundle", "privacy", "save"]
+        },
+        {
+          "id": "SUPPORT-004",
+          "title": "GUIなしでサポートZIPを出力する",
+          "purpose": "GUIが起動できない障害でも診断資料を回収できるようにする。",
+          "preconditions": ["配布フォルダを展開済みである"],
+          "steps": ["exe --export-support-bundleを実行する", "終了コードと出力Pathを確認する", "ZIPを展開する"],
+          "expected_results": ["終了コードが0である", "出力PathがJSONで表示される", "ZIPを破損なく展開できる"],
+          "release_blocking": true,
+          "allow_skip": false,
+          "evidence_required": true,
+          "tags": ["support-bundle", "headless", "recovery"]
+        }
+      ]
+    }
+  ]
+}

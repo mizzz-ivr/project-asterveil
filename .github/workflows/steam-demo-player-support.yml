@@ -1,0 +1,82 @@
+name: Steam Demo Player Support Validation
+
+on:
+  push:
+    paths:
+      - 'game/app/client/gamepad_input.py'
+      - 'game/app/client/player_support.py'
+      - 'game/app/client/client_diagnostics.py'
+      - 'game/app/client/enhanced_tk_steam_demo.py'
+      - 'game/app/client/runtime_paths.py'
+      - 'game/app/client/run_tk_steam_demo.py'
+      - 'qa/steam_demo/checklist_v2_extension.json'
+      - 'tools/steam_demo_qa_v2.py'
+      - 'tests/test_player_support.py'
+      - 'tests/test_player_support_qa.py'
+      - 'docs/STEAM_DEMO_PLAYER_SUPPORT.md'
+      - '.github/workflows/steam-demo-player-support.yml'
+  pull_request:
+    paths:
+      - 'game/app/client/gamepad_input.py'
+      - 'game/app/client/player_support.py'
+      - 'game/app/client/client_diagnostics.py'
+      - 'game/app/client/enhanced_tk_steam_demo.py'
+      - 'game/app/client/runtime_paths.py'
+      - 'game/app/client/run_tk_steam_demo.py'
+      - 'qa/steam_demo/checklist_v2_extension.json'
+      - 'tools/steam_demo_qa_v2.py'
+      - 'tests/test_player_support.py'
+      - 'tests/test_player_support_qa.py'
+      - 'docs/STEAM_DEMO_PLAYER_SUPPORT.md'
+      - '.github/workflows/steam-demo-player-support.yml'
+
+jobs:
+  validate-player-support:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run player support tests
+        run: |
+          python -m unittest \
+            tests.test_player_support \
+            tests.test_player_support_qa \
+            -v
+
+      - name: Validate composite QA checklist v2
+        run: |
+          python tools/steam_demo_qa_v2.py validate --json
+          python tools/steam_demo_qa_v2.py materialize \
+            --output tmp/checklist_v2.json
+
+      - name: Validate materialized checklist with existing QA contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from tools.steam_demo_qa import load_checklist
+
+          checklist = load_checklist(Path("tmp/checklist_v2.json"))
+          cases = [
+              case
+              for section in checklist["sections"]
+              for case in section["cases"]
+          ]
+          assert checklist["checklist_version"] == 2
+          assert len(cases) >= 31
+          assert any(case["id"] == "INPUT-001" for case in cases)
+          assert any(case["id"] == "SUPPORT-004" for case in cases)
+          print(f"validated checklist v2: {len(cases)} cases")
+          PY
+
+      - name: Run headless support smoke test
+        run: |
+          python -m game.app.client.run_tk_steam_demo \
+            --smoke-test \
+            --support-root tmp/support-smoke

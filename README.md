@@ -23,6 +23,7 @@ Project Asterveil は、重厚で感動的な長編ストーリー、戦略性�
 - [Steam Demo Screen Renderer](./docs/STEAM_DEMO_SCREEN_RENDERER.md)
 - [Steam Demo Screen Action Dispatcher](./docs/STEAM_DEMO_SCREEN_ACTION_DISPATCHER.md)
 - [Steam Demo Desktop Client](./docs/STEAM_DEMO_DESKTOP_CLIENT.md)
+- [Steam Demo Player Support](./docs/STEAM_DEMO_PLAYER_SUPPORT.md)
 - [Save Compatibility Policy](./docs/SAVE_COMPATIBILITY_POLICY.md)
 - [Windows Steam Demo Build](./docs/WINDOWS_STEAM_DEMO_BUILD.md)
 - [Steam Demo QA Gate](./docs/STEAM_DEMO_QA_GATE.md)
@@ -55,9 +56,14 @@ Project Asterveil は、重厚で感動的な長編ストーリー、戦略性�
 python -m game.app.client.run_tk_steam_demo
 ```
 
-Tkinterを利用できない環境では、以下のCLI版を利用します。
+WindowsではXInput互換ゲームパッドを自動検出します。最後に操作した入力方式へ入力ヒントが切り替わります。
 
-### CLI
+```bash
+python -m game.app.client.run_tk_steam_demo --disable-gamepad
+python -m game.app.client.run_tk_steam_demo --reset-tutorial
+```
+
+Tkinterを利用できない環境ではCLI版を利用します。
 
 ```bash
 python -m game.app.cli.run_steam_demo
@@ -66,20 +72,26 @@ python -m game.app.cli.run_steam_demo
 ### GUIなしSmoke Test
 
 ```bash
-python -m game.app.client.run_tk_steam_demo --smoke-test
+python -m game.app.client.run_tk_steam_demo \
+  --smoke-test \
+  --support-root tmp/support-smoke
 ```
+
+### サポートZIP
+
+```bash
+python -m game.app.client.run_tk_steam_demo \
+  --export-support-bundle
+```
+
+診断ログ、クラッシュレポート、設定、環境情報をZIP化します。セーブ本体は含めず、サイズ・SHA-256・Save Versionなどのメタデータだけを記録します。自動アップロードは行いません。
+
+詳細は[Steam Demo Player Support](./docs/STEAM_DEMO_PLAYER_SUPPORT.md)を参照してください。
 
 ## Windows配布Build
 
-Windows PowerShellでBuild依存を導入します。
-
 ```powershell
 python -m pip install -r requirements-build.txt
-```
-
-配布フォルダ・マニフェスト・ZIPを生成し、exe Smoke Testまで実行します。
-
-```powershell
 python tools/build_windows_release.py `
   --output-root build/windows-release `
   --git-sha local `
@@ -90,10 +102,20 @@ python tools/build_windows_release.py `
 
 ## Steamデモ公開前QA
 
-Build Manifestから手動QA Runを作成します。
+Player Supportを含むQA v2を生成します。
 
 ```bash
-python tools/steam_demo_qa.py init \
+python tools/steam_demo_qa_v2.py validate --json
+python tools/steam_demo_qa_v2.py materialize \
+  --output tmp/checklist_v2.json
+```
+
+Build ManifestからQA v2 Runを作成します。
+
+```bash
+python tools/steam_demo_qa.py \
+  --checklist tmp/checklist_v2.json \
+  init \
   --manifest path/to/BUILD_MANIFEST.json \
   --output-dir qa/runs/qa-<git-sha>-<utc> \
   --tester tester-name \
@@ -102,21 +124,20 @@ python tools/steam_demo_qa.py init \
   --architecture x64 \
   --resolution 1920x1080 \
   --dpi-scale 100 \
-  --input keyboard_mouse
+  --input keyboard_mouse \
+  --input gamepad
 ```
 
-QA Runを検証し、レビュー用`SUMMARY.md`を生成します。
-
 ```bash
-python tools/steam_demo_qa.py validate \
+python tools/steam_demo_qa.py \
+  --checklist tmp/checklist_v2.json \
+  validate \
   --report qa/runs/<run-id>/report.json
 ```
 
 詳細は[Steam Demo QA Gate](./docs/STEAM_DEMO_QA_GATE.md)を参照してください。
 
 ## Steamストア公開準備
-
-Version付き台帳と現在状態を検証し、レビュー用Summaryを生成します。
 
 ```bash
 python tools/steam_store_readiness.py validate \
@@ -125,11 +146,8 @@ python tools/steam_store_readiness.py validate \
   --summary release/steam/STORE_READINESS_SUMMARY.md
 ```
 
-デモ公開Gateを確認します。
-
 ```bash
-python tools/steam_store_readiness.py gate \
-  --gate demo_release
+python tools/steam_store_readiness.py gate --gate demo_release
 ```
 
 初期状態は公開日、担当、素材、審査、QA承認が未確定のため、Gateは`INCOMPLETE`です。
@@ -138,15 +156,8 @@ python tools/steam_store_readiness.py gate \
 
 ## セーブ互換確認・移行
 
-Dry Run:
-
 ```bash
 python -m game.save.cli.migrate_save path/to/save.json --dry-run
-```
-
-バックアップを作成して現在Versionへ移行:
-
-```bash
 python -m game.save.cli.migrate_save path/to/save.json
 ```
 
@@ -155,7 +166,7 @@ python -m game.save.cli.migrate_save path/to/save.json
 個別テスト:
 
 ```bash
-python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_screen_router tests.test_screen_runtime tests.test_screen_runtime_initialization tests.test_screen_renderer tests.test_screen_action_dispatcher tests.test_steam_demo_composition tests.test_steam_demo_client tests.test_windows_release_build tests.test_steam_demo_qa tests.test_steam_store_readiness tests.test_save_slice tests.test_save_migration tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen tests.test_economy_facility_screen -v
+python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_screen_router tests.test_screen_runtime tests.test_screen_runtime_initialization tests.test_screen_renderer tests.test_screen_action_dispatcher tests.test_steam_demo_composition tests.test_steam_demo_client tests.test_windows_release_build tests.test_steam_demo_qa tests.test_steam_store_readiness tests.test_player_support tests.test_player_support_qa tests.test_save_slice tests.test_save_migration tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen tests.test_economy_facility_screen -v
 ```
 
 ## Repository Bootstrap Structure
