@@ -7,6 +7,8 @@ from pathlib import Path
 
 APPLICATION_DIRECTORY_NAME = "ProjectAsterveil"
 SAVE_FILE_NAME = "steam_demo_slot_01.json"
+SUPPORT_DIRECTORY_NAME = "support"
+SUPPORT_SETTINGS_FILE_NAME = "client_settings.json"
 
 
 def is_frozen_runtime() -> bool:
@@ -47,3 +49,13 @@ def default_save_path() -> Path:
     if is_frozen_runtime():
         return user_data_root() / SAVE_FILE_NAME
     return source_project_root() / "tmp" / SAVE_FILE_NAME
+
+
+def default_support_root() -> Path:
+    if is_frozen_runtime():
+        return user_data_root() / SUPPORT_DIRECTORY_NAME
+    return source_project_root() / "tmp" / "steam-demo-support"
+
+
+def default_support_settings_path() -> Path:
+    return default_support_root() / SUPPORT_SETTINGS_FILE_NAME
