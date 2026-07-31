@@ -1,0 +1,39 @@
+name: Chapter Content Pack Validation
+
+on:
+  pull_request:
+    paths:
+      - 'content/packs/**'
+      - 'tools/chapter_content_pack.py'
+      - 'tests/test_chapter_content_pack.py'
+      - 'docs/CHAPTER_CONTENT_PACK_PIPELINE.md'
+      - '.github/workflows/chapter-content-pack.yml'
+  push:
+    paths:
+      - 'content/packs/**'
+      - 'tools/chapter_content_pack.py'
+      - 'tests/test_chapter_content_pack.py'
+      - 'docs/CHAPTER_CONTENT_PACK_PIPELINE.md'
+      - '.github/workflows/chapter-content-pack.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: 契約テスト
+        run: python -m unittest tests.test_chapter_content_pack -v
+      - name: サンプル章を検証
+        run: python tools/chapter_content_pack.py validate content/packs/ch02/pack.json
+      - name: Master候補とレビューSummaryを生成
+        run: |
+          python tools/chapter_content_pack.py generate \
+            content/packs/ch02/pack.json \
+            --output tmp/generated-content/ch02
+      - name: 生成物を確認
+        run: |
+          test -f tmp/generated-content/ch02/CONTENT_PACK_MANIFEST.json
+          test -f tmp/generated-content/ch02/SUMMARY.md
