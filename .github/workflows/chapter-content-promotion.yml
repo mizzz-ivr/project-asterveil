@@ -6,11 +6,17 @@ on:
       - 'README.md'
       - 'content/master_catalog_v1.json'
       - 'content/packs/**'
+      - 'data/master/**'
+      - 'game/app/infrastructure/dialogue_event_repository.py'
+      - 'game/battle/infrastructure/master_data_repository.py'
+      - 'game/location/infrastructure/master_data_repository.py'
+      - 'game/quest/infrastructure/master_data_repository.py'
       - 'tools/chapter_content_pack.py'
       - 'tools/chapter_content_promotion.py'
       - 'tools/content_promotion/**'
       - 'tests/test_chapter_content_pack.py'
       - 'tests/test_chapter_content_promotion.py'
+      - 'tests/test_chapter_content_promotion_contracts.py'
       - 'tests/fixtures/chapter_content_promotion/**'
       - 'docs/CHAPTER_CONTENT_PROMOTION.md'
       - '.github/workflows/chapter-content-promotion.yml'
@@ -19,11 +25,17 @@ on:
       - 'README.md'
       - 'content/master_catalog_v1.json'
       - 'content/packs/**'
+      - 'data/master/**'
+      - 'game/app/infrastructure/dialogue_event_repository.py'
+      - 'game/battle/infrastructure/master_data_repository.py'
+      - 'game/location/infrastructure/master_data_repository.py'
+      - 'game/quest/infrastructure/master_data_repository.py'
       - 'tools/chapter_content_pack.py'
       - 'tools/chapter_content_promotion.py'
       - 'tools/content_promotion/**'
       - 'tests/test_chapter_content_pack.py'
       - 'tests/test_chapter_content_promotion.py'
+      - 'tests/test_chapter_content_promotion_contracts.py'
       - 'tests/fixtures/chapter_content_promotion/**'
       - 'docs/CHAPTER_CONTENT_PROMOTION.md'
       - '.github/workflows/chapter-content-promotion.yml'
@@ -46,6 +58,7 @@ jobs:
           python -m unittest \
             tests.test_chapter_content_pack \
             tests.test_chapter_content_promotion \
+            tests.test_chapter_content_promotion_contracts \
             -v
 
       - name: Validate fixture against current Master Catalog
