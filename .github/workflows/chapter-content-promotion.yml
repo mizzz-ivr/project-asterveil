@@ -1,0 +1,88 @@
+name: Chapter Content Promotion Validation
+
+on:
+  push:
+    paths:
+      - 'content/master_catalog_v1.json'
+      - 'content/packs/**'
+      - 'tools/chapter_content_pack.py'
+      - 'tools/chapter_content_promotion.py'
+      - 'tools/content_promotion/**'
+      - 'tests/test_chapter_content_pack.py'
+      - 'tests/test_chapter_content_promotion.py'
+      - 'tests/fixtures/chapter_content_promotion/**'
+      - 'docs/CHAPTER_CONTENT_PROMOTION.md'
+      - '.github/workflows/chapter-content-promotion.yml'
+  pull_request:
+    paths:
+      - 'content/master_catalog_v1.json'
+      - 'content/packs/**'
+      - 'tools/chapter_content_pack.py'
+      - 'tools/chapter_content_promotion.py'
+      - 'tools/content_promotion/**'
+      - 'tests/test_chapter_content_pack.py'
+      - 'tests/test_chapter_content_promotion.py'
+      - 'tests/fixtures/chapter_content_promotion/**'
+      - 'docs/CHAPTER_CONTENT_PROMOTION.md'
+      - '.github/workflows/chapter-content-promotion.yml'
+
+jobs:
+  validate-chapter-content-promotion:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run content pack and promotion contract tests
+        run: |
+          python -m unittest \
+            tests.test_chapter_content_pack \
+            tests.test_chapter_content_promotion \
+            -v
+
+      - name: Validate fixture against current Master Catalog
+        run: |
+          python tools/chapter_content_promotion.py \
+            --catalog content/master_catalog_v1.json \
+            --project-root . \
+            validate tests/fixtures/chapter_content_promotion/pack.external_refs.json
+
+      - name: Generate promotion review artifacts
+        run: |
+          python tools/chapter_content_promotion.py \
+            --catalog content/master_catalog_v1.json \
+            --project-root . \
+            plan tests/fixtures/chapter_content_promotion/pack.external_refs.json \
+            --output tmp/chapter-content-promotion
+
+      - name: Verify promotion plan contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("tmp/chapter-content-promotion")
+          plan = json.loads((root / "PROMOTION_PLAN.json").read_text(encoding="utf-8"))
+          assert plan["status"] == "ready_for_review", plan
+          assert plan["apply_supported"] is False
+          assert not plan["unresolved_references"]
+          assert not plan["conflicts"]
+          assert plan["classifications"]["quests"]["add"] == ["quest.ch02.promotion_check"]
+          assert (root / "PROMOTION_SUMMARY.md").exists()
+          assert (root / "localization.ja.candidates.json").exists()
+          print("promotion plan verified")
+          PY
+
+      - name: Upload promotion review artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chapter-content-promotion-${{ github.sha }}
+          path: tmp/chapter-content-promotion
+          if-no-files-found: error
+          retention-days: 14
