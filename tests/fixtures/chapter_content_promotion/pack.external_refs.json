@@ -24,6 +24,7 @@
     "quests": [
       {
         "quest_id": "quest.ch02.promotion_check",
+        "id": "quest.ch02.promotion_check",
         "title": "既存資産との接続確認",
         "description": "第一章の討伐対象と報酬Itemを参照する。",
         "category": "sub",
