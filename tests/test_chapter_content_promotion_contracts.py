@@ -119,6 +119,26 @@ class ChapterContentPromotionMasterContractTest(unittest.TestCase):
             "lines": ["霧の森へ向かってください。"],
         }
 
+    def _quest(self) -> dict:
+        return {
+            "quest_id": "quest.ch02.report_check",
+            "id": "quest.ch02.report_check",
+            "title": "報告先確認",
+            "description": "報告NPCの明示指定を確認する。",
+            "availability": {
+                "required_quest_ids": [],
+                "required_flags": [],
+                "min_level": 1,
+            },
+            "objectives": [
+                {
+                    "id": "obj.ch02.report_check.talk",
+                    "type": "talk",
+                }
+            ],
+            "reward": {"exp": 10, "gold": 0, "items": []},
+        }
+
     def test_event_candidate_must_match_master_repository_contract(self) -> None:
         pack = self._pack()
         pack["content"]["events"] = [
@@ -178,6 +198,24 @@ class ChapterContentPromotionMasterContractTest(unittest.TestCase):
         ):
             self._evaluate(pack)
 
+    def test_unknown_event_action_is_rejected(self) -> None:
+        pack = self._pack()
+        pack["content"]["events"] = [
+            {
+                "id": "event.ch02.typo",
+                "title": "未知Action",
+                "next_event_ids": [],
+                "steps": [
+                    {
+                        "id": "step.typo",
+                        "action": {"type": "typo_action", "params": {}},
+                    }
+                ],
+            }
+        ]
+        with self.assertRaisesRegex(PromotionError, "unsupported_action_type"):
+            self._evaluate(pack)
+
     def test_valid_event_candidate_can_be_review_ready(self) -> None:
         pack = self._pack()
         pack["content"]["events"] = [
@@ -219,6 +257,12 @@ class ChapterContentPromotionMasterContractTest(unittest.TestCase):
         with self.assertRaisesRegex(PromotionError, "entity_id_alias_mismatch"):
             self._evaluate(pack)
 
+    def test_quest_requires_explicit_reporting_npc(self) -> None:
+        pack = self._pack()
+        pack["content"]["quests"] = [self._quest()]
+        with self.assertRaisesRegex(PromotionError, "reporting_npc_id_required"):
+            self._evaluate(pack)
+
     def test_entry_id_conversation_matches_pack_and_master_contracts(self) -> None:
         pack = self._pack()
         pack["content"]["conversations"] = [self._conversation()]
@@ -227,6 +271,22 @@ class ChapterContentPromotionMasterContractTest(unittest.TestCase):
         self.assertEqual(
             ["conversation.ch02.guide"],
             evaluation.plan["classifications"]["conversations"]["add"],
+        )
+
+    def test_unknown_conversation_npc_is_recorded_as_unresolved(self) -> None:
+        pack = self._pack()
+        conversation = self._conversation()
+        conversation["npc_id"] = "npc.ch99.unknown"
+        pack["content"]["conversations"] = [conversation]
+        evaluation = self._evaluate(pack)
+        self.assertTrue(evaluation.blocked)
+        self.assertTrue(
+            any(
+                item["source_kind"] == "conversations"
+                and item["target_kind"] == "npcs"
+                and item["target_id"] == "npc.ch99.unknown"
+                for item in evaluation.plan["unresolved_references"]
+            )
         )
 
     def test_conversation_priority_must_be_convertible_to_integer(self) -> None:
