@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "chapter_id": "ch02",
+  "title": "霧都の残響（テンプレート例）",
+  "estimated_play_minutes": 45,
+  "content": {
+    "locations": [
+      {
+        "location_id": "location.ch02.mist_harbor",
+        "name": "霧港"
+      }
+    ],
+    "encounters": [
+      {
+        "encounter_id": "encounter.ch02.mist_wolf",
+        "enemies": [
+          {
+            "enemy_id": "enemy.ch02.mist_wolf",
+            "count": 1
+          }
+        ]
+      }
+    ],
+    "quests": [
+      {
+        "quest_id": "quest.ch02.first_trace",
+        "title": "最初の痕跡",
+        "category": "main",
+        "repeatable": false,
+        "availability": {
+          "required_quest_ids": [],
+          "required_flags": [],
+          "min_level": 1
+        },
+        "encounter_id": "encounter.ch02.mist_wolf",
+        "target_location_id": "location.ch02.mist_harbor",
+        "objectives": [
+          {
+            "id": "obj.ch02.first_trace.kill",
+            "type": "kill_enemy",
+            "target_enemy_id": "enemy.ch02.mist_wolf",
+            "required_count": 1
+          }
+        ],
+        "reward": {
+          "exp": 100,
+          "gold": 50,
+          "items": [],
+          "completion_flag": "flag.ch02.first_trace_complete"
+        }
+      }
+    ],
+    "events": [
+      {
+        "event_id": "event.ch02.opening",
+        "scene_id": "scene.ch02.opening",
+        "lines": [],
+        "triggers": [],
+        "next_event_ids": []
+      }
+    ],
+    "conversations": []
+  }
+}
