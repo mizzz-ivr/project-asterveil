@@ -64,11 +64,18 @@ def require_string(value: object, field: str) -> str:
 
 
 def entity_id(row: Mapping[str, Any], fields: Sequence[str], source: str) -> str:
-    for field in fields:
-        value = row.get(field)
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    raise PromotionError(f"entity_id_missing:{source}")
+    aliases = [
+        (field, value.strip())
+        for field in fields
+        if isinstance((value := row.get(field)), str) and value.strip()
+    ]
+    if not aliases:
+        raise PromotionError(f"entity_id_missing:{source}")
+    distinct_values = {value for _, value in aliases}
+    if len(distinct_values) > 1:
+        details = ",".join(f"{field}={value}" for field, value in aliases)
+        raise PromotionError(f"entity_id_alias_mismatch:{source}:{details}")
+    return aliases[0][1]
 
 
 def load_catalog(definition_path: Path, project_root: Path | None = None) -> MasterCatalog:
