@@ -7,6 +7,14 @@ from typing import Any, Mapping
 
 from .catalog import MasterCatalog, PromotionError
 
+_ALLOWED_EVENT_ACTIONS = {
+    "accept_quest",
+    "start_battle",
+    "set_flag",
+    "complete_quest",
+    "end_event",
+}
+
 _REQUIRED_EVENT_ACTION_PARAMS = {
     "accept_quest": "quest_id",
     "complete_quest": "quest_id",
@@ -50,6 +58,17 @@ def _require_action_param(
         )
 
 
+def _validate_quest_promotion_contracts(quests: list[Mapping[str, Any]]) -> None:
+    for quest in quests:
+        quest_id = str(quest.get("quest_id") or quest.get("id") or "<unknown>")
+        reporting_npc_id = quest.get("reporting_npc_id")
+        if not isinstance(reporting_npc_id, str) or not reporting_npc_id.strip():
+            raise PromotionError(
+                "master_contract_invalid:quests:reporting_npc_id_required:"
+                f"{quest_id}"
+            )
+
+
 def _validate_event_actions(events: list[Mapping[str, Any]]) -> None:
     for event in events:
         event_id = str(event.get("id") or event.get("event_id") or "<unknown>")
@@ -72,6 +91,11 @@ def _validate_event_actions(events: list[Mapping[str, Any]]) -> None:
             if not isinstance(action_type, str) or not action_type.strip():
                 raise PromotionError(
                     f"master_contract_invalid:events:action_type_missing:{event_id}:{step_index}"
+                )
+            if action_type not in _ALLOWED_EVENT_ACTIONS:
+                raise PromotionError(
+                    "master_contract_invalid:events:unsupported_action_type:"
+                    f"{event_id}:{step_index}:{action_type}"
                 )
             params = action.get("params", {})
             if not isinstance(params, Mapping):
@@ -111,6 +135,13 @@ def _validate_conversation_contracts(
                 raise PromotionError(
                     f"master_contract_invalid:conversations:missing_field:"
                     f"{entry_id}:{field}"
+                )
+        for field in ("entry_id", "npc_id"):
+            value = row.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise PromotionError(
+                    f"master_contract_invalid:conversations:{field}_must_be_non_empty_string:"
+                    f"{entry_id}"
                 )
         try:
             int(row["priority"])
@@ -240,6 +271,7 @@ def validate_master_contracts(
                 QuestMasterDataRepository,
             )
 
+            _validate_quest_promotion_contracts(quests)
             _write_json(root / "quests.sample.json", quests)
             try:
                 QuestMasterDataRepository(root).load_quests()
@@ -288,11 +320,3 @@ def validate_master_contracts(
         ]
         if conversations:
             _validate_conversation_contracts(conversations)
-            known_npcs = catalog.ids("npcs")
-            for conversation in conversations:
-                npc_id = conversation.get("npc_id")
-                if not isinstance(npc_id, str) or npc_id not in known_npcs:
-                    raise PromotionError(
-                        "master_contract_invalid:conversations:npc_not_found:"
-                        f"{conversation.get('entry_id')}:{npc_id}"
-                    )
