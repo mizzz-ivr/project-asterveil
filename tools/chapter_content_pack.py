@@ -45,11 +45,17 @@ def _entity_id(kind: str, entity: Mapping[str, Any]) -> str:
         "locations": ("location_id", "id"),
         "conversations": ("conversation_id", "entry_id", "id"),
     }[kind]
-    for key in keys:
-        value = entity.get(key)
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    raise ContentPackError(f"{kind}_entity_id_missing")
+    aliases = [
+        (key, value.strip())
+        for key in keys
+        if isinstance((value := entity.get(key)), str) and value.strip()
+    ]
+    if not aliases:
+        raise ContentPackError(f"{kind}_entity_id_missing")
+    if len({value for _, value in aliases}) > 1:
+        details = ",".join(f"{key}={value}" for key, value in aliases)
+        raise ContentPackError(f"{kind}_entity_id_alias_mismatch:{details}")
+    return aliases[0][1]
 
 
 def validate_pack(pack: Mapping[str, Any]) -> ValidationResult:
