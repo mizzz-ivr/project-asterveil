@@ -45,6 +45,8 @@ class ChapterContentPromotionTest(unittest.TestCase):
                     {
                         "location_id": "location.ch01.town",
                         "name": "始まりの町",
+                        "location_type": "town",
+                        "description": "第一章の拠点。",
                         "accessible_from": [],
                     }
                 ],
@@ -107,6 +109,7 @@ class ChapterContentPromotionTest(unittest.TestCase):
                     {
                         "location_id": "location.ch02.forest",
                         "name": "霧の森",
+                        "location_type": "field",
                         "description": "町の北に広がる森。",
                         "accessible_from": ["location.ch01.town"],
                         "available_encounter_ids": ["encounter.ch01.slime"],
@@ -228,7 +231,8 @@ class ChapterContentPromotionTest(unittest.TestCase):
         pack = self._pack()
         pack["content"]["events"] = [
             {
-                "event_id": "event.ch02.start",
+                "id": "event.ch02.start",
+                "title": "未知Encounterの開始確認",
                 "next_event_ids": [],
                 "steps": [
                     {
