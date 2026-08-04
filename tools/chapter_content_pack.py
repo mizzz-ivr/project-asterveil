@@ -43,7 +43,7 @@ def _entity_id(kind: str, entity: Mapping[str, Any]) -> str:
         "events": ("event_id", "id"),
         "encounters": ("encounter_id", "id"),
         "locations": ("location_id", "id"),
-        "conversations": ("conversation_id", "id"),
+        "conversations": ("conversation_id", "entry_id", "id"),
     }[kind]
     for key in keys:
         value = entity.get(key)
