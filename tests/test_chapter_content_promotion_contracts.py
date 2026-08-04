@@ -47,6 +47,7 @@ class ChapterContentPromotionMasterContractTest(unittest.TestCase):
             "quests": [
                 {
                     "quest_id": "quest.ch01.prologue",
+                    "id": "quest.ch01.prologue",
                     "availability": {"required_quest_ids": []},
                 }
             ],
@@ -61,7 +62,14 @@ class ChapterContentPromotionMasterContractTest(unittest.TestCase):
             "conversations": [
                 {"entry_id": "conversation.ch01.greeting", "npc_id": "npc.ch01.guide"}
             ],
-            "npcs": [{"npc_id": "npc.ch01.guide", "display_name": "案内人"}],
+            "npcs": [
+                {
+                    "npc_id": "npc.ch01.guide",
+                    "npc_name": "案内人",
+                    "location_id": "location.ch01.town",
+                    "fallback_lines": ["気をつけて。"],
+                }
+            ],
             "enemies": [{"id": "enemy.ch01.slime"}],
             "items": [{"item_id": "item.ch01.herb"}],
         }
@@ -102,6 +110,15 @@ class ChapterContentPromotionMasterContractTest(unittest.TestCase):
             load_catalog(self.catalog_path, self.root),
         )
 
+    def _conversation(self) -> dict:
+        return {
+            "entry_id": "conversation.ch02.guide",
+            "npc_id": "npc.ch01.guide",
+            "priority": 100,
+            "condition": {},
+            "lines": ["霧の森へ向かってください。"],
+        }
+
     def test_event_candidate_must_match_master_repository_contract(self) -> None:
         pack = self._pack()
         pack["content"]["events"] = [
@@ -140,6 +157,27 @@ class ChapterContentPromotionMasterContractTest(unittest.TestCase):
         ):
             self._evaluate(pack)
 
+    def test_set_flag_requires_flag_id(self) -> None:
+        pack = self._pack()
+        pack["content"]["events"] = [
+            {
+                "id": "event.ch02.flag",
+                "title": "Flag設定",
+                "next_event_ids": [],
+                "steps": [
+                    {
+                        "id": "step.flag",
+                        "action": {"type": "set_flag", "params": {}},
+                    }
+                ],
+            }
+        ]
+        with self.assertRaisesRegex(
+            PromotionError,
+            "required_action_param_missing.*set_flag.*flag_id",
+        ):
+            self._evaluate(pack)
+
     def test_valid_event_candidate_can_be_review_ready(self) -> None:
         pack = self._pack()
         pack["content"]["events"] = [
@@ -167,22 +205,97 @@ class ChapterContentPromotionMasterContractTest(unittest.TestCase):
             evaluation.plan["classifications"]["events"]["add"],
         )
 
-    def test_entry_id_conversation_matches_pack_and_master_contracts(self) -> None:
+    def test_mismatched_id_aliases_are_rejected(self) -> None:
         pack = self._pack()
-        pack["content"]["conversations"] = [
+        pack["content"]["events"] = [
             {
-                "entry_id": "conversation.ch02.guide",
-                "npc_id": "npc.ch01.guide",
-                "priority": 100,
-                "condition": {},
-                "lines": ["霧の森へ向かってください。"],
+                "event_id": "event.ch02.claimed",
+                "id": "event.ch02.loaded",
+                "title": "不一致ID",
+                "next_event_ids": [],
+                "steps": [],
             }
         ]
+        with self.assertRaisesRegex(PromotionError, "entity_id_alias_mismatch"):
+            self._evaluate(pack)
+
+    def test_entry_id_conversation_matches_pack_and_master_contracts(self) -> None:
+        pack = self._pack()
+        pack["content"]["conversations"] = [self._conversation()]
         evaluation = self._evaluate(pack)
         self.assertFalse(evaluation.blocked)
         self.assertEqual(
             ["conversation.ch02.guide"],
             evaluation.plan["classifications"]["conversations"]["add"],
+        )
+
+    def test_conversation_priority_must_be_convertible_to_integer(self) -> None:
+        pack = self._pack()
+        conversation = self._conversation()
+        conversation["priority"] = "high"
+        pack["content"]["conversations"] = [conversation]
+        with self.assertRaisesRegex(PromotionError, "priority_must_be_integer"):
+            self._evaluate(pack)
+
+    def test_dialogue_effect_requires_quest_id(self) -> None:
+        pack = self._pack()
+        conversation = self._conversation()
+        conversation["steps"] = [
+            {
+                "step_id": "step.choice",
+                "speaker": "案内人",
+                "lines": ["依頼を受けますか？"],
+                "choices": [
+                    {
+                        "choice_id": "choice.accept",
+                        "text": "受ける",
+                        "next_step_id": "",
+                        "effects": [
+                            {"action_type": "accept_quest", "params": {}}
+                        ],
+                    }
+                ],
+            }
+        ]
+        pack["content"]["conversations"] = [conversation]
+        with self.assertRaisesRegex(
+            PromotionError,
+            "required_action_param_missing.*accept_quest.*quest_id",
+        ):
+            self._evaluate(pack)
+
+    def test_dialogue_effect_unknown_quest_is_unresolved(self) -> None:
+        pack = self._pack()
+        conversation = self._conversation()
+        conversation["steps"] = [
+            {
+                "step_id": "step.choice",
+                "speaker": "案内人",
+                "lines": ["依頼を受けますか？"],
+                "choices": [
+                    {
+                        "choice_id": "choice.accept",
+                        "text": "受ける",
+                        "next_step_id": "",
+                        "effects": [
+                            {
+                                "action_type": "accept_quest",
+                                "params": {"quest_id": "quest.ch99.unknown"},
+                            }
+                        ],
+                    }
+                ],
+            }
+        ]
+        pack["content"]["conversations"] = [conversation]
+        evaluation = self._evaluate(pack)
+        self.assertTrue(evaluation.blocked)
+        self.assertTrue(
+            any(
+                item["target_id"] == "quest.ch99.unknown"
+                and item["source_kind"] == "conversations"
+                for item in evaluation.plan["unresolved_references"]
+            )
         )
 
 
