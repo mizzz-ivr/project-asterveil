@@ -3,6 +3,7 @@ name: Chapter Content Promotion Validation
 on:
   push:
     paths:
+      - 'README.md'
       - 'content/master_catalog_v1.json'
       - 'content/packs/**'
       - 'tools/chapter_content_pack.py'
@@ -15,6 +16,7 @@ on:
       - '.github/workflows/chapter-content-promotion.yml'
   pull_request:
     paths:
+      - 'README.md'
       - 'content/master_catalog_v1.json'
       - 'content/packs/**'
       - 'tools/chapter_content_pack.py'
