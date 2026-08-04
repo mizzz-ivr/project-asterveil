@@ -285,6 +285,47 @@ def _collect_references(
             target_id=conversation.get("npc_id"),
             available=available.get("npcs", set()),
         )
+        for step_index, step in enumerate(conversation.get("steps", [])):
+            if not isinstance(step, Mapping):
+                continue
+            for choice_index, choice in enumerate(step.get("choices", [])):
+                if not isinstance(choice, Mapping):
+                    continue
+                for effect_index, effect in enumerate(choice.get("effects", [])):
+                    if not isinstance(effect, Mapping):
+                        continue
+                    action_type = effect.get("action_type")
+                    params = effect.get("params", {})
+                    if not isinstance(params, Mapping):
+                        continue
+                    if action_type in {"accept_quest", "turn_in_quest", "report_quest"}:
+                        _reference(
+                            references,
+                            unresolved,
+                            source_kind="conversations",
+                            source_id=conversation_id,
+                            field=(
+                                f"steps[{step_index}].choices[{choice_index}]."
+                                f"effects[{effect_index}].params.quest_id"
+                            ),
+                            target_kind="quests",
+                            target_id=params.get("quest_id"),
+                            available=available.get("quests", set()),
+                        )
+                    if action_type == "start_battle":
+                        _reference(
+                            references,
+                            unresolved,
+                            source_kind="conversations",
+                            source_id=conversation_id,
+                            field=(
+                                f"steps[{step_index}].choices[{choice_index}]."
+                                f"effects[{effect_index}].params.encounter_id"
+                            ),
+                            target_kind="encounters",
+                            target_id=params.get("encounter_id"),
+                            available=available.get("encounters", set()),
+                        )
     return references, unresolved
 
 
