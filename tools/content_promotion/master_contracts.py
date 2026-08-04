@@ -11,6 +11,15 @@ _REQUIRED_EVENT_ACTION_PARAMS = {
     "accept_quest": "quest_id",
     "complete_quest": "quest_id",
     "start_battle": "encounter_id",
+    "set_flag": "flag_id",
+}
+
+_REQUIRED_DIALOGUE_EFFECT_PARAMS = {
+    "accept_quest": "quest_id",
+    "turn_in_quest": "quest_id",
+    "report_quest": "quest_id",
+    "start_battle": "encounter_id",
+    "set_flag": "flag_id",
 }
 
 
@@ -19,6 +28,26 @@ def _write_json(path: Path, value: object) -> None:
         json.dumps(value, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+
+
+def _require_action_param(
+    *,
+    action_scope: str,
+    source_id: str,
+    position: str,
+    action_type: str,
+    params: Mapping[str, Any],
+    required_params: Mapping[str, str],
+) -> None:
+    required_param = required_params.get(action_type)
+    if required_param is None:
+        return
+    value = params.get(required_param)
+    if not isinstance(value, str) or not value.strip():
+        raise PromotionError(
+            f"master_contract_invalid:{action_scope}:required_action_param_missing:"
+            f"{source_id}:{position}:{action_type}:{required_param}"
+        )
 
 
 def _validate_event_actions(events: list[Mapping[str, Any]]) -> None:
@@ -49,14 +78,19 @@ def _validate_event_actions(events: list[Mapping[str, Any]]) -> None:
                 raise PromotionError(
                     f"master_contract_invalid:events:action_params_must_be_object:{event_id}:{step_index}"
                 )
-            required_param = _REQUIRED_EVENT_ACTION_PARAMS.get(action_type)
-            if required_param is not None:
-                value = params.get(required_param)
-                if not isinstance(value, str) or not value.strip():
-                    raise PromotionError(
-                        "master_contract_invalid:events:required_action_param_missing:"
-                        f"{event_id}:{step_index}:{action_type}:{required_param}"
-                    )
+            _require_action_param(
+                action_scope="events",
+                source_id=event_id,
+                position=str(step_index),
+                action_type=action_type,
+                params=params,
+                required_params=_REQUIRED_EVENT_ACTION_PARAMS,
+            )
+
+
+def _validate_string_list(value: object, error_code: str) -> None:
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise PromotionError(error_code)
 
 
 def _validate_conversation_contracts(
@@ -66,10 +100,11 @@ def _validate_conversation_contracts(
 
     `game.app.application.__init__`がPlayableSliceを公開しているため、Repositoryを
     検証Toolから直接importすると循環importになる。ここでは同Repositoryの公開入力
-    契約を明示的に再現し、契約変更時はWorkflowのpath監視で必ず再検証する。
+    契約と実行時に必須となるEffect Paramを明示的に再現し、Repositoryファイル変更時
+    はWorkflowのpath監視で必ず再検証する。
     """
 
-    for row_index, row in enumerate(conversations):
+    for row in conversations:
         entry_id = str(row.get("entry_id") or "<unknown>")
         for field in ("entry_id", "npc_id", "priority", "lines"):
             if field not in row:
@@ -77,15 +112,34 @@ def _validate_conversation_contracts(
                     f"master_contract_invalid:conversations:missing_field:"
                     f"{entry_id}:{field}"
                 )
-        if not isinstance(row["lines"], list):
+        try:
+            int(row["priority"])
+        except (TypeError, ValueError) as exc:
             raise PromotionError(
-                f"master_contract_invalid:conversations:lines_must_be_list:{entry_id}"
-            )
+                f"master_contract_invalid:conversations:priority_must_be_integer:{entry_id}"
+            ) from exc
+        _validate_string_list(
+            row["lines"],
+            f"master_contract_invalid:conversations:lines_must_be_string_list:{entry_id}",
+        )
         condition = row.get("condition", {})
         if not isinstance(condition, Mapping):
             raise PromotionError(
                 f"master_contract_invalid:conversations:condition_must_be_object:{entry_id}"
             )
+        for field in ("required_flags", "excluded_flags"):
+            if field in condition:
+                _validate_string_list(
+                    condition[field],
+                    f"master_contract_invalid:conversations:condition_{field}_must_be_string_list:{entry_id}",
+                )
+        required_status = condition.get("required_quest_status", {})
+        if not isinstance(required_status, Mapping):
+            raise PromotionError(
+                "master_contract_invalid:conversations:required_quest_status_must_be_object:"
+                f"{entry_id}"
+            )
+
         steps = row.get("steps", [])
         if not isinstance(steps, list):
             raise PromotionError(
@@ -106,10 +160,11 @@ def _validate_conversation_contracts(
             line_values = step.get("lines")
             if line_values is None and "line" in step:
                 line_values = [step.get("line")]
-            if line_values is not None and not isinstance(line_values, list):
-                raise PromotionError(
-                    "master_contract_invalid:conversations:step_lines_must_be_list:"
-                    f"{entry_id}:{step_index}"
+            if line_values is not None:
+                _validate_string_list(
+                    line_values,
+                    "master_contract_invalid:conversations:step_lines_must_be_string_list:"
+                    f"{entry_id}:{step_index}",
                 )
             choices = step.get("choices", [])
             if not isinstance(choices, list):
@@ -129,6 +184,13 @@ def _validate_conversation_contracts(
                             "master_contract_invalid:conversations:choice_missing_field:"
                             f"{entry_id}:{step_index}:{choice_index}:{field}"
                         )
+                for field in ("set_flags", "required_flags", "excluded_flags"):
+                    if field in choice:
+                        _validate_string_list(
+                            choice[field],
+                            "master_contract_invalid:conversations:choice_"
+                            f"{field}_must_be_string_list:{entry_id}:{step_index}:{choice_index}",
+                        )
                 effects = choice.get("effects", [])
                 if not isinstance(effects, list):
                     raise PromotionError(
@@ -141,12 +203,26 @@ def _validate_conversation_contracts(
                             "master_contract_invalid:conversations:effect_must_be_object:"
                             f"{entry_id}:{step_index}:{choice_index}:{effect_index}"
                         )
+                    action_type = effect.get("action_type")
+                    if not isinstance(action_type, str) or not action_type.strip():
+                        raise PromotionError(
+                            "master_contract_invalid:conversations:effect_action_type_missing:"
+                            f"{entry_id}:{step_index}:{choice_index}:{effect_index}"
+                        )
                     params = effect.get("params", {})
                     if not isinstance(params, Mapping):
                         raise PromotionError(
                             "master_contract_invalid:conversations:effect_params_must_be_object:"
                             f"{entry_id}:{step_index}:{choice_index}:{effect_index}"
                         )
+                    _require_action_param(
+                        action_scope="conversations",
+                        source_id=entry_id,
+                        position=f"{step_index}:{choice_index}:{effect_index}",
+                        action_type=action_type,
+                        params=params,
+                        required_params=_REQUIRED_DIALOGUE_EFFECT_PARAMS,
+                    )
 
 
 def validate_master_contracts(
