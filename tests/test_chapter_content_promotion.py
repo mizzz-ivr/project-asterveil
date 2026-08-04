@@ -177,16 +177,20 @@ class ChapterContentPromotionTest(unittest.TestCase):
         self.assertEqual("npc.ch99.unknown", evaluation.plan["unresolved_references"][0]["target_id"])
 
     def test_existing_id_with_different_content_is_conflict(self) -> None:
-        pack = self._pack()
-        pack["content"]["quests"][0]["quest_id"] = "quest.ch01.prologue"
-        pack["content"]["quests"][0]["id"] = "quest.ch01.prologue"
+        path = self.root / "data/master/quests.sample.json"
+        master_quests = json.loads(path.read_text())
+        existing = dict(self._pack()["content"]["quests"][0])
+        existing["title"] = "既存Master側の旧タイトル"
+        master_quests.append(existing)
+        write_json(path, master_quests)
+
         evaluation = evaluate_promotion(
-            pack,
+            self._pack(),
             load_catalog(self.catalog_path, self.root),
         )
         self.assertTrue(evaluation.blocked)
         self.assertIn(
-            "quest.ch01.prologue",
+            "quest.ch02.first_step",
             evaluation.plan["classifications"]["quests"]["conflict"],
         )
 
