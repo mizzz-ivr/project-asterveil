@@ -120,6 +120,7 @@ class ChapterContentPromotionTest(unittest.TestCase):
                 "quests": [
                     {
                         "quest_id": "quest.ch02.first_step",
+                        "id": "quest.ch02.first_step",
                         "title": "森への一歩",
                         "description": "案内人から話を聞く。",
                         "reporting_npc_id": "npc.ch01.guide",
