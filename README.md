@@ -28,6 +28,8 @@ Project Asterveil は、重厚で感動的な長編ストーリー、戦略性�
 - [Windows Steam Demo Build](./docs/WINDOWS_STEAM_DEMO_BUILD.md)
 - [Steam Demo QA Gate](./docs/STEAM_DEMO_QA_GATE.md)
 - [Steam Store Readiness](./docs/STEAM_STORE_READINESS.md)
+- [Chapter Content Pack Pipeline](./docs/CHAPTER_CONTENT_PACK_PIPELINE.md)
+- [Chapter Content Promotion](./docs/CHAPTER_CONTENT_PROMOTION.md)
 - [Quest Board / Travel Screen](./docs/QUEST_BOARD_TRAVEL_SCREEN.md)
 - [NPC Dialogue / Field Event Screen](./docs/NPC_DIALOGUE_FIELD_EVENT_SCREEN.md)
 - [Gathering / Treasure Screen](./docs/GATHERING_TREASURE_SCREEN.md)
@@ -47,6 +49,38 @@ Project Asterveil は、重厚で感動的な長編ストーリー、戦略性�
 - [Equipment Salvage Vertical Slice](./docs/EQUIPMENT_SALVAGE_VERTICAL_SLICE.md)
 - [Party Menu Vertical Slice](./docs/PARTY_MENU_VERTICAL_SLICE.md)
 - [Workshop Order Vertical Slice](./docs/WORKSHOP_ORDER_VERTICAL_SLICE.md)
+
+## 章コンテンツパック
+
+章パック内部のID・参照・Quest依存・Objective順序を検証します。
+
+```bash
+python tools/chapter_content_pack.py validate \
+  content/packs/ch02/pack.json
+
+python tools/chapter_content_pack.py generate \
+  content/packs/ch02/pack.json \
+  --output tmp/generated-content/ch02
+```
+
+既存Masterとの外部参照、ID競合、Quest依存循環を検証し、非破壊なPromotion Planを生成します。
+
+```bash
+python tools/chapter_content_promotion.py \
+  --catalog content/master_catalog_v1.json \
+  --project-root . \
+  validate tests/fixtures/chapter_content_promotion/pack.external_refs.json
+
+python tools/chapter_content_promotion.py \
+  --catalog content/master_catalog_v1.json \
+  --project-root . \
+  plan tests/fixtures/chapter_content_promotion/pack.external_refs.json \
+  --output tmp/chapter-content-promotion
+```
+
+Promotion Toolは`data/master`を更新しません。`PROMOTION_PLAN.json`、`PROMOTION_SUMMARY.md`、ローカライズ候補をレビューした後、正式Masterへの反映は別PRで行います。
+
+詳細は[Chapter Content Pack Pipeline](./docs/CHAPTER_CONTENT_PACK_PIPELINE.md)と[Chapter Content Promotion](./docs/CHAPTER_CONTENT_PROMOTION.md)を参照してください。
 
 ## Steamデモ実行
 
@@ -166,13 +200,14 @@ python -m game.save.cli.migrate_save path/to/save.json
 個別テスト:
 
 ```bash
-python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_screen_router tests.test_screen_runtime tests.test_screen_runtime_initialization tests.test_screen_renderer tests.test_screen_action_dispatcher tests.test_steam_demo_composition tests.test_steam_demo_client tests.test_windows_release_build tests.test_steam_demo_qa tests.test_steam_store_readiness tests.test_player_support tests.test_player_support_qa tests.test_save_slice tests.test_save_migration tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen tests.test_economy_facility_screen -v
+python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_screen_router tests.test_screen_runtime tests.test_screen_runtime_initialization tests.test_screen_renderer tests.test_screen_action_dispatcher tests.test_steam_demo_composition tests.test_steam_demo_client tests.test_windows_release_build tests.test_steam_demo_qa tests.test_steam_store_readiness tests.test_player_support tests.test_player_support_qa tests.test_save_slice tests.test_save_migration tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen tests.test_economy_facility_screen tests.test_chapter_content_pack tests.test_chapter_content_promotion -v
 ```
 
 ## Repository Bootstrap Structure
 
 - `game/` : ゲーム実装コードのルート
 - `data/` : マスターデータ / セーブ契約 / サンプル定義
+- `content/` : 章パック、Master Catalog、コンテンツ制作定義
 - `tools/` : データ検証や補助スクリプト
 - `tests/` : テストコードとフィクスチャ
 - `prototypes/` : 実験的実装（採用時に正式格納先へ移動）

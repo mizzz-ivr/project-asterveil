@@ -63,6 +63,12 @@ class ChapterContentPackTest(unittest.TestCase):
         with self.assertRaises(ContentPackError):
             validate_pack(pack)
 
+    def test_id_alias_mismatch_is_rejected(self) -> None:
+        pack = build_pack()
+        pack["content"]["events"][0]["id"] = "event.ch02.different"
+        with self.assertRaisesRegex(ContentPackError, "entity_id_alias_mismatch"):
+            validate_pack(pack)
+
     def test_missing_reference_is_rejected(self) -> None:
         pack = build_pack()
         pack["content"]["quests"][0]["encounter_id"] = "encounter.ch02.none"

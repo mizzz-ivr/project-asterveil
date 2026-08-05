@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "collections": {
+    "quests": {
+      "path": "data/master/quests.sample.json",
+      "id_fields": [
+        "quest_id",
+        "id"
+      ],
+      "promotable": true
+    },
+    "events": {
+      "path": "data/master/events.sample.json",
+      "id_fields": [
+        "event_id",
+        "id"
+      ],
+      "promotable": true
+    },
+    "encounters": {
+      "path": "data/master/encounters.sample.json",
+      "id_fields": [
+        "encounter_id",
+        "id"
+      ],
+      "promotable": true
+    },
+    "locations": {
+      "path": "data/master/locations.sample.json",
+      "id_fields": [
+        "location_id",
+        "id"
+      ],
+      "promotable": true
+    },
+    "conversations": {
+      "path": "data/master/dialogues.sample.json",
+      "id_fields": [
+        "conversation_id",
+        "entry_id",
+        "id"
+      ],
+      "promotable": true
+    },
+    "npcs": {
+      "path": "data/master/npcs.sample.json",
+      "id_fields": [
+        "npc_id",
+        "id"
+      ],
+      "promotable": false
+    },
+    "enemies": {
+      "path": "data/master/enemies.sample.json",
+      "id_fields": [
+        "enemy_id",
+        "id"
+      ],
+      "promotable": false
+    },
+    "items": {
+      "path": "data/master/items.sample.json",
+      "id_fields": [
+        "item_id",
+        "id"
+      ],
+      "promotable": false
+    }
+  }
+}

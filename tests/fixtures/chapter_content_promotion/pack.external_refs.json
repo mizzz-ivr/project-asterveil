@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "chapter_id": "ch02",
+  "title": "既存Master参照の統合確認",
+  "estimated_play_minutes": 15,
+  "content": {
+    "locations": [
+      {
+        "location_id": "location.ch02.promotion_gate",
+        "name": "昇格確認区画",
+        "description": "既存Master参照の統合確認に利用するFixture。",
+        "location_type": "field",
+        "accessible_from": [
+          "location.town.astel"
+        ],
+        "available_encounter_ids": [
+          "encounter.ch01.port_wraith"
+        ],
+        "default_encounter_id": "encounter.ch01.port_wraith",
+        "can_return_to_hub": true
+      }
+    ],
+    "encounters": [],
+    "quests": [
+      {
+        "quest_id": "quest.ch02.promotion_check",
+        "id": "quest.ch02.promotion_check",
+        "title": "既存資産との接続確認",
+        "description": "第一章の討伐対象と報酬Itemを参照する。",
+        "category": "sub",
+        "repeatable": false,
+        "reporting_npc_id": "npc.astel.guard",
+        "availability": {
+          "required_quest_ids": [
+            "quest.ch01.missing_port_record"
+          ],
+          "required_flags": [
+            "flag.ch01.port_record_restored"
+          ],
+          "min_level": 1
+        },
+        "encounter_id": "encounter.ch01.port_wraith",
+        "target_location_id": "location.ch02.promotion_gate",
+        "objectives": [
+          {
+            "id": "obj.ch02.promotion_check.kill",
+            "type": "kill_enemy",
+            "target_enemy_id": "enemy.ch01.port_wraith",
+            "required_count": 1
+          }
+        ],
+        "reward": {
+          "exp": 80,
+          "gold": 40,
+          "items": [
+            {
+              "item_id": "item.consumable.focus_drop",
+              "amount": 1
+            }
+          ],
+          "completion_flag": "flag.ch02.promotion_check_complete"
+        }
+      }
+    ],
+    "events": [],
+    "conversations": []
+  }
+}
