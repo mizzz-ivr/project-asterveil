@@ -2,6 +2,12 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+from .bundle import (
+    BundleVerification,
+    apply_bundle,
+    verify_bundle,
+    write_bundle,
+)
 from .catalog import (
     MasterCatalog,
     PromotionError,
@@ -24,11 +30,15 @@ def evaluate_promotion(
 
 
 __all__ = [
+    "BundleVerification",
     "MasterCatalog",
     "PromotionError",
     "PromotionEvaluation",
+    "apply_bundle",
     "evaluate_promotion",
     "load_catalog",
     "render_summary",
+    "verify_bundle",
+    "write_bundle",
     "write_outputs",
 ]

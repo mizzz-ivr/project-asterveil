@@ -17,8 +17,10 @@ on:
       - 'tests/test_chapter_content_pack.py'
       - 'tests/test_chapter_content_promotion.py'
       - 'tests/test_chapter_content_promotion_contracts.py'
+      - 'tests/test_chapter_content_promotion_bundle.py'
       - 'tests/fixtures/chapter_content_promotion/**'
       - 'docs/CHAPTER_CONTENT_PROMOTION.md'
+      - 'docs/CHAPTER_CONTENT_PROMOTION_BUNDLE.md'
       - '.github/workflows/chapter-content-promotion.yml'
   pull_request:
     paths:
@@ -36,8 +38,10 @@ on:
       - 'tests/test_chapter_content_pack.py'
       - 'tests/test_chapter_content_promotion.py'
       - 'tests/test_chapter_content_promotion_contracts.py'
+      - 'tests/test_chapter_content_promotion_bundle.py'
       - 'tests/fixtures/chapter_content_promotion/**'
       - 'docs/CHAPTER_CONTENT_PROMOTION.md'
+      - 'docs/CHAPTER_CONTENT_PROMOTION_BUNDLE.md'
       - '.github/workflows/chapter-content-promotion.yml'
 
 jobs:
@@ -59,6 +63,7 @@ jobs:
             tests.test_chapter_content_pack \
             tests.test_chapter_content_promotion \
             tests.test_chapter_content_promotion_contracts \
+            tests.test_chapter_content_promotion_bundle \
             -v
 
       - name: Validate fixture against current Master Catalog
@@ -94,10 +99,70 @@ jobs:
           print("promotion plan verified")
           PY
 
+      - name: Generate promotion patch bundle
+        run: |
+          python tools/chapter_content_promotion.py \
+            --catalog content/master_catalog_v1.json \
+            --project-root . \
+            bundle tests/fixtures/chapter_content_promotion/pack.external_refs.json \
+            --output tmp/chapter-content-promotion-bundle
+
+      - name: Verify bundle and dry-run apply
+        run: |
+          python tools/chapter_content_promotion.py \
+            --catalog content/master_catalog_v1.json \
+            --project-root . \
+            verify-bundle tmp/chapter-content-promotion-bundle/bundle
+
+          CATALOG_SHA=$(python - <<'PY'
+          import json
+          from pathlib import Path
+          manifest = json.loads(
+              Path("tmp/chapter-content-promotion-bundle/bundle/BUNDLE_MANIFEST.json").read_text(encoding="utf-8")
+          )
+          print(manifest["source_catalog_sha256"])
+          PY
+          )
+
+          python tools/chapter_content_promotion.py \
+            --catalog content/master_catalog_v1.json \
+            --project-root . \
+            apply-bundle tmp/chapter-content-promotion-bundle/bundle \
+            --confirm-catalog-sha "$CATALOG_SHA"
+
+          git diff --exit-code -- data/master
+
+      - name: Verify bundle contract
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path("tmp/chapter-content-promotion-bundle")
+          bundle = root / "bundle"
+          manifest = json.loads((bundle / "BUNDLE_MANIFEST.json").read_text(encoding="utf-8"))
+          assert manifest["bundle_type"] == "chapter_content_promotion_add_only"
+          assert manifest["mode"] == "add_only"
+          assert manifest["files"]
+          assert manifest["source_catalog_sha256"] != manifest["expected_catalog_sha256"]
+          assert all(value["added_ids"] for value in manifest["files"])
+          assert all((bundle / value["candidate_path"]).exists() for value in manifest["files"])
+          assert all((bundle / value["diff_path"]).exists() for value in manifest["files"])
+          source_pack = bundle / manifest["source_pack_path"]
+          assert source_pack.exists()
+          assert hashlib.sha256(source_pack.read_bytes()).hexdigest() == manifest["source_pack_file_sha256"]
+          assert (bundle / "BUNDLE_SUMMARY.md").exists()
+          assert (root / "plan/PROMOTION_PLAN.json").exists()
+          print("promotion bundle verified")
+          PY
+
       - name: Upload promotion review artifacts
         uses: actions/upload-artifact@v4
         with:
           name: chapter-content-promotion-${{ github.sha }}
-          path: tmp/chapter-content-promotion
+          path: |
+            tmp/chapter-content-promotion
+            tmp/chapter-content-promotion-bundle
           if-no-files-found: error
           retention-days: 14
