@@ -135,6 +135,7 @@ jobs:
       - name: Verify bundle contract
         run: |
           python - <<'PY'
+          import hashlib
           import json
           from pathlib import Path
 
@@ -148,6 +149,9 @@ jobs:
           assert all(value["added_ids"] for value in manifest["files"])
           assert all((bundle / value["candidate_path"]).exists() for value in manifest["files"])
           assert all((bundle / value["diff_path"]).exists() for value in manifest["files"])
+          source_pack = bundle / manifest["source_pack_path"]
+          assert source_pack.exists()
+          assert hashlib.sha256(source_pack.read_bytes()).hexdigest() == manifest["source_pack_file_sha256"]
           assert (bundle / "BUNDLE_SUMMARY.md").exists()
           assert (root / "plan/PROMOTION_PLAN.json").exists()
           print("promotion bundle verified")
