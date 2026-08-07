@@ -6,8 +6,8 @@ import tempfile
 from pathlib import Path
 from typing import Sequence
 
+from game.app.application.bestiary_playable_slice import BestiaryPlayableSliceApplication
 from game.app.application.demo_flow_service import DemoFlowService, SteamDemoApplication
-from game.app.application.playable_slice import PlayableSliceApplication
 from game.app.client.client_diagnostics import (
     CrashReportWriter,
     DiagnosticSeverity,
@@ -44,7 +44,7 @@ def build_client(
     master_root: Path | None = None,
 ) -> SteamDemoClientController:
     resolved_master_root = Path(master_root or default_master_root()).resolve()
-    playable = PlayableSliceApplication(
+    playable = BestiaryPlayableSliceApplication(
         master_root=resolved_master_root,
         save_file_path=Path(save_path),
     )
