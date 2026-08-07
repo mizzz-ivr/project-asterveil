@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from game.app.application.bestiary_playable_slice import BestiaryPlayableSliceApplication
 from game.app.application.playable_slice import PlayableSliceApplication
 from game.app.application.equipment_service import VALID_SLOTS
 
@@ -212,7 +213,7 @@ def _run_field_event_flow(app: PlayableSliceApplication) -> list[str]:
 
 
 def run_playable_vertical_slice(save_path: Path) -> int:
-    app = PlayableSliceApplication(master_root=Path("data/master"), save_file_path=save_path)
+    app = BestiaryPlayableSliceApplication(master_root=Path("data/master"), save_file_path=save_path)
 
     while True:
         print("\n=== Project Asterveil: Playable Vertical Slice ===")
