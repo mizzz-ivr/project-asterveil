@@ -1,0 +1,33 @@
+[
+  {
+    "enemy_id": "enemy.ch01.port_wraith",
+    "display_name": "港の亡霊",
+    "category": "normal",
+    "habitat_location_ids": [
+      "location.field.tidal_flats",
+      "location.dungeon.sunken_storehouse"
+    ],
+    "description": "潮霧に残った怨念が人の形を取った魔物。光と斬撃で実体化した瞬間を狙うと崩しやすい。",
+    "mastery_kill_count": 5
+  },
+  {
+    "enemy_id": "enemy.ch01.brine_slime",
+    "display_name": "瘴気スライム",
+    "category": "normal",
+    "habitat_location_ids": [
+      "location.field.tidal_flats"
+    ],
+    "description": "海水と瘴気が混ざって生まれた粘体。熱に弱く、群れを作る前に火属性で数を減らすのが有効。",
+    "mastery_kill_count": 5
+  },
+  {
+    "enemy_id": "enemy.ch01.tide_serpent",
+    "display_name": "海蛇の主",
+    "category": "boss",
+    "habitat_location_ids": [
+      "location.dungeon.tidegate_ruins"
+    ],
+    "description": "古い潮門遺跡を縄張りとする大型海蛇。雷と刺突に弱いが、長期戦では潮の咆哮で戦況を崩してくる。",
+    "mastery_kill_count": 3
+  }
+]
