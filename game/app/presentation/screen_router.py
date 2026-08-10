@@ -29,6 +29,7 @@ class SteamDemoRouteId(str, Enum):
     GATHERING = "steam_demo.gathering"
     TREASURE = "steam_demo.treasure"
     FIELD_EVENT = "steam_demo.field_event"
+    BESTIARY = "steam_demo.bestiary"
 
 
 DEFAULT_ROUTE_BY_FLOW: Mapping[SteamDemoFlowId, SteamDemoRouteId] = {
@@ -45,6 +46,7 @@ DEFAULT_ROUTE_BY_FLOW: Mapping[SteamDemoFlowId, SteamDemoRouteId] = {
     SteamDemoFlowId.GATHERING: SteamDemoRouteId.GATHERING,
     SteamDemoFlowId.TREASURE: SteamDemoRouteId.TREASURE,
     SteamDemoFlowId.FIELD_EVENT: SteamDemoRouteId.FIELD_EVENT,
+    SteamDemoFlowId.BESTIARY: SteamDemoRouteId.BESTIARY,
 }
 
 
