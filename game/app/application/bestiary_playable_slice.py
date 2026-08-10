@@ -143,17 +143,25 @@ class BestiaryPlayableSliceApplication(PlayableSliceApplication):
             ),
         )
 
+    def bestiary_entries(self) -> tuple[BestiaryEntryView, ...]:
+        """Presentation層が構造化ログを再解析せず図鑑一覧を参照するための型付きAPI。"""
+        return self._bestiary_service.list_entries(self.bestiary_state)
+
+    def bestiary_entry(self, enemy_id: str) -> BestiaryEntryView:
+        """図鑑詳細表示用の型付きAPI。未遭遇情報のマスキングはServiceへ委譲する。"""
+        return self._bestiary_service.entry_view(self.bestiary_state, enemy_id)
+
     def bestiary_lines(self) -> list[str]:
         lines = [self._format_progress(summary) for summary in self.bestiary_progress()]
         for slot_index, entry in enumerate(
-            self._bestiary_service.list_entries(self.bestiary_state),
+            self.bestiary_entries(),
             start=1,
         ):
             lines.extend(self._format_entry(entry, slot_index=slot_index))
         return lines
 
     def bestiary_detail_lines(self, enemy_id: str) -> list[str]:
-        entry = self._bestiary_service.entry_view(self.bestiary_state, enemy_id)
+        entry = self.bestiary_entry(enemy_id)
         return self._format_entry(entry, slot_index=None)
 
     @staticmethod
