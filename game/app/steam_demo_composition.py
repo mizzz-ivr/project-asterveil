@@ -14,9 +14,7 @@ from game.app.application.playable_exploration_facade import PlayableExploration
 from game.app.application.playable_interaction_facade import PlayableInteractionFacade
 from game.app.application.playable_party_menu_facade import PlayablePartyMenuFacade
 from game.app.application.playable_slice import PlayableSliceApplication
-from game.app.presentation.bestiary_action_dispatcher import (
-    BestiarySceneActionDispatcher,
-)
+from game.app.presentation.bestiary_action_dispatcher import BestiarySceneActionDispatcher
 from game.app.presentation.bestiary_scene_registry import BestiarySceneBuilderRegistry
 from game.app.presentation.bestiary_screen import BestiaryScreenController
 from game.app.presentation.economy_facility_screen import (
@@ -44,7 +42,9 @@ from game.app.presentation.quest_travel_screen import (
     QuestBoardScreenController,
     TravelScreenController,
 )
+from game.app.presentation.screen_action_dispatcher import SteamDemoSceneActionDispatcher
 from game.app.presentation.screen_controller import SteamDemoScreenController
+from game.app.presentation.screen_renderer import SteamDemoSceneBuilderRegistry
 from game.app.presentation.screen_router import (
     SteamDemoRouteId,
     SteamDemoScreenRouter,
@@ -72,7 +72,7 @@ SteamDemoSubScreenController: TypeAlias = (
 ScreenBuilder: TypeAlias = Callable[[], SteamDemoSubScreenController]
 
 
-_EXPECTED_CONTROLLER_TYPES: Mapping[
+_BASE_CONTROLLER_TYPES: Mapping[
     SteamDemoRouteId,
     type[SteamDemoSubScreenController],
 ] = {
@@ -89,8 +89,18 @@ _EXPECTED_CONTROLLER_TYPES: Mapping[
     SteamDemoRouteId.GATHERING: GatheringScreenController,
     SteamDemoRouteId.TREASURE: TreasureScreenController,
     SteamDemoRouteId.FIELD_EVENT: FieldEventScreenController,
-    SteamDemoRouteId.BESTIARY: BestiaryScreenController,
 }
+
+
+BESTIARY_CAPABILITIES = (
+    "bestiary_progress",
+    "bestiary_entries",
+    "bestiary_entry",
+)
+
+
+def _supports_bestiary(playable: object) -> bool:
+    return all(callable(getattr(playable, name, None)) for name in BESTIARY_CAPABILITIES)
 
 
 @dataclass(frozen=True)
@@ -109,6 +119,9 @@ class SteamDemoScreenFactory:
         builders: Mapping[SteamDemoRouteId, ScreenBuilder] | None = None,
     ) -> None:
         self._playable = playable
+        self._expected_controller_types = dict(_BASE_CONTROLLER_TYPES)
+        if _supports_bestiary(playable):
+            self._expected_controller_types[SteamDemoRouteId.BESTIARY] = BestiaryScreenController
         source_builders = self._default_builders() if builders is None else builders
         self._builders = dict(source_builders)
         self._validate_registry()
@@ -123,7 +136,7 @@ class SteamDemoScreenFactory:
         if builder is None:
             raise ValueError(f"screen_builder_not_registered:{route_id.value}")
         controller = builder()
-        expected_type = _EXPECTED_CONTROLLER_TYPES.get(route_id)
+        expected_type = self._expected_controller_types.get(route_id)
         if expected_type is None:
             raise ValueError(f"expected_controller_not_registered:{route_id.value}")
         if not isinstance(controller, expected_type):
@@ -136,7 +149,7 @@ class SteamDemoScreenFactory:
 
     def _default_builders(self) -> Mapping[SteamDemoRouteId, ScreenBuilder]:
         playable = self._playable
-        return {
+        builders: dict[SteamDemoRouteId, ScreenBuilder] = {
             SteamDemoRouteId.USE_ITEM: lambda: ItemUseScreenController(
                 PlayablePartyMenuFacade(playable)
             ),
@@ -172,11 +185,13 @@ class SteamDemoScreenFactory:
             SteamDemoRouteId.FIELD_EVENT: lambda: FieldEventScreenController(
                 PlayableInteractionFacade(playable)
             ),
-            SteamDemoRouteId.BESTIARY: lambda: BestiaryScreenController(playable),
         }
+        if _supports_bestiary(playable):
+            builders[SteamDemoRouteId.BESTIARY] = lambda: BestiaryScreenController(playable)
+        return builders
 
     def _validate_registry(self) -> None:
-        expected_routes = set(_EXPECTED_CONTROLLER_TYPES)
+        expected_routes = set(self._expected_controller_types)
         actual_routes = set(self._builders)
         missing_routes = sorted(route.value for route in expected_routes - actual_routes)
         extra_routes = sorted(route.value for route in actual_routes - expected_routes)
@@ -194,8 +209,8 @@ class SteamDemoSessionComposition:
     router: SteamDemoScreenRouter
     screen_factory: SteamDemoScreenFactory
     runtime: SteamDemoScreenRuntime
-    scene_registry: BestiarySceneBuilderRegistry
-    action_dispatcher: BestiarySceneActionDispatcher
+    scene_registry: SteamDemoSceneBuilderRegistry
+    action_dispatcher: SteamDemoSceneActionDispatcher
 
 
 class SteamDemoCompositionRoot:
@@ -210,8 +225,15 @@ class SteamDemoCompositionRoot:
         router = SteamDemoScreenRouter(top_screen)
         screen_factory = SteamDemoScreenFactory(playable)
         runtime = SteamDemoScreenRuntime(router, screen_factory)
-        scene_registry = BestiarySceneBuilderRegistry()
-        action_dispatcher = BestiarySceneActionDispatcher(runtime, scene_registry)
+        if _supports_bestiary(playable):
+            scene_registry: SteamDemoSceneBuilderRegistry = BestiarySceneBuilderRegistry()
+            action_dispatcher: SteamDemoSceneActionDispatcher = BestiarySceneActionDispatcher(
+                runtime,
+                scene_registry,
+            )
+        else:
+            scene_registry = SteamDemoSceneBuilderRegistry()
+            action_dispatcher = SteamDemoSceneActionDispatcher(runtime, scene_registry)
         return SteamDemoSessionComposition(
             top_screen=top_screen,
             router=router,
