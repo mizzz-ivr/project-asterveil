@@ -14,6 +14,11 @@ from game.app.application.playable_exploration_facade import PlayableExploration
 from game.app.application.playable_interaction_facade import PlayableInteractionFacade
 from game.app.application.playable_party_menu_facade import PlayablePartyMenuFacade
 from game.app.application.playable_slice import PlayableSliceApplication
+from game.app.presentation.bestiary_action_dispatcher import (
+    BestiarySceneActionDispatcher,
+)
+from game.app.presentation.bestiary_scene_registry import BestiarySceneBuilderRegistry
+from game.app.presentation.bestiary_screen import BestiaryScreenController
 from game.app.presentation.economy_facility_screen import (
     CraftingScreenController,
     InnScreenController,
@@ -39,11 +44,7 @@ from game.app.presentation.quest_travel_screen import (
     QuestBoardScreenController,
     TravelScreenController,
 )
-from game.app.presentation.screen_action_dispatcher import (
-    SteamDemoSceneActionDispatcher,
-)
 from game.app.presentation.screen_controller import SteamDemoScreenController
-from game.app.presentation.screen_renderer import SteamDemoSceneBuilderRegistry
 from game.app.presentation.screen_router import (
     SteamDemoRouteId,
     SteamDemoScreenRouter,
@@ -65,6 +66,7 @@ SteamDemoSubScreenController: TypeAlias = (
     | GatheringScreenController
     | TreasureScreenController
     | FieldEventScreenController
+    | BestiaryScreenController
 )
 
 ScreenBuilder: TypeAlias = Callable[[], SteamDemoSubScreenController]
@@ -87,6 +89,7 @@ _EXPECTED_CONTROLLER_TYPES: Mapping[
     SteamDemoRouteId.GATHERING: GatheringScreenController,
     SteamDemoRouteId.TREASURE: TreasureScreenController,
     SteamDemoRouteId.FIELD_EVENT: FieldEventScreenController,
+    SteamDemoRouteId.BESTIARY: BestiaryScreenController,
 }
 
 
@@ -169,6 +172,7 @@ class SteamDemoScreenFactory:
             SteamDemoRouteId.FIELD_EVENT: lambda: FieldEventScreenController(
                 PlayableInteractionFacade(playable)
             ),
+            SteamDemoRouteId.BESTIARY: lambda: BestiaryScreenController(playable),
         }
 
     def _validate_registry(self) -> None:
@@ -190,8 +194,8 @@ class SteamDemoSessionComposition:
     router: SteamDemoScreenRouter
     screen_factory: SteamDemoScreenFactory
     runtime: SteamDemoScreenRuntime
-    scene_registry: SteamDemoSceneBuilderRegistry
-    action_dispatcher: SteamDemoSceneActionDispatcher
+    scene_registry: BestiarySceneBuilderRegistry
+    action_dispatcher: BestiarySceneActionDispatcher
 
 
 class SteamDemoCompositionRoot:
@@ -206,8 +210,8 @@ class SteamDemoCompositionRoot:
         router = SteamDemoScreenRouter(top_screen)
         screen_factory = SteamDemoScreenFactory(playable)
         runtime = SteamDemoScreenRuntime(router, screen_factory)
-        scene_registry = SteamDemoSceneBuilderRegistry()
-        action_dispatcher = SteamDemoSceneActionDispatcher(runtime, scene_registry)
+        scene_registry = BestiarySceneBuilderRegistry()
+        action_dispatcher = BestiarySceneActionDispatcher(runtime, scene_registry)
         return SteamDemoSessionComposition(
             top_screen=top_screen,
             router=router,
