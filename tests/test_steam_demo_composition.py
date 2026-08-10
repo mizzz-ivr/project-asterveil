@@ -7,6 +7,7 @@ from pathlib import Path
 from game.app.application.demo_flow_service import DemoFlowService, SteamDemoApplication
 from game.app.application.playable_slice import PlayableSliceApplication
 from game.app.infrastructure.demo_flow_repository import DemoFlowMasterDataRepository
+from game.app.presentation.bestiary_screen import BestiaryScreenController
 from game.app.presentation.economy_facility_screen import (
     CraftingScreenController,
     InnScreenController,
@@ -56,6 +57,7 @@ EXPECTED_CONTROLLER_TYPES = {
     SteamDemoRouteId.GATHERING: GatheringScreenController,
     SteamDemoRouteId.TREASURE: TreasureScreenController,
     SteamDemoRouteId.FIELD_EVENT: FieldEventScreenController,
+    SteamDemoRouteId.BESTIARY: BestiaryScreenController,
 }
 
 
