@@ -30,6 +30,7 @@ class SteamDemoFlowId(str, Enum):
     GATHERING = "gather"
     TREASURE = "open_treasure"
     FIELD_EVENT = "field_events"
+    BESTIARY = "bestiary"
 
 
 @dataclass(frozen=True)

@@ -408,7 +408,9 @@ class SteamDemoSceneActionDispatcher:
         }
 
     def _validate_adapters(self) -> None:
-        expected = set(SteamDemoRouteId) - {SteamDemoRouteId.TOP_MENU}
+        # Base Dispatcherは自分が提供する既定Adapter集合だけを契約として検証する。
+        # 新しいRouteは拡張Dispatcher側で追加できるよう、Route Enum全体へ依存しない。
+        expected = set(self._default_adapters())
         actual = set(self._adapters)
         missing = sorted(route.value for route in expected - actual)
         extra = sorted(route.value for route in actual - expected)
