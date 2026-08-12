@@ -30,6 +30,7 @@ Project Asterveil は、重厚で感動的な長編ストーリー、戦略性�
 - [Steam Store Readiness](./docs/STEAM_STORE_READINESS.md)
 - [Chapter Content Pack Pipeline](./docs/CHAPTER_CONTENT_PACK_PIPELINE.md)
 - [Chapter Content Promotion](./docs/CHAPTER_CONTENT_PROMOTION.md)
+- [Chapter Content Promotion Bundle](./docs/CHAPTER_CONTENT_PROMOTION_BUNDLE.md)
 - [Quest Board / Travel Screen](./docs/QUEST_BOARD_TRAVEL_SCREEN.md)
 - [NPC Dialogue / Field Event Screen](./docs/NPC_DIALOGUE_FIELD_EVENT_SCREEN.md)
 - [Gathering / Treasure Screen](./docs/GATHERING_TREASURE_SCREEN.md)
@@ -78,9 +79,45 @@ python tools/chapter_content_promotion.py \
   --output tmp/chapter-content-promotion
 ```
 
-Promotion Toolは`data/master`を更新しません。`PROMOTION_PLAN.json`、`PROMOTION_SUMMARY.md`、ローカライズ候補をレビューした後、正式Masterへの反映は別PRで行います。
+レビュー用の候補Master、Unified Diff、Hash付きManifestを生成します。
 
-詳細は[Chapter Content Pack Pipeline](./docs/CHAPTER_CONTENT_PACK_PIPELINE.md)と[Chapter Content Promotion](./docs/CHAPTER_CONTENT_PROMOTION.md)を参照してください。
+```bash
+python tools/chapter_content_promotion.py \
+  --catalog content/master_catalog_v1.json \
+  --project-root . \
+  bundle tests/fixtures/chapter_content_promotion/pack.external_refs.json \
+  --output tmp/chapter-content-promotion-bundle
+
+python tools/chapter_content_promotion.py \
+  --catalog content/master_catalog_v1.json \
+  --project-root . \
+  verify-bundle tmp/chapter-content-promotion-bundle/bundle
+```
+
+`apply-bundle`は`--write`なしではDry-runです。Manifestの`source_catalog_sha256`を確認値として指定します。
+
+```bash
+python tools/chapter_content_promotion.py \
+  --catalog content/master_catalog_v1.json \
+  --project-root . \
+  apply-bundle tmp/chapter-content-promotion-bundle/bundle \
+  --confirm-catalog-sha <source_catalog_sha256>
+```
+
+CandidateとDiffをレビューし、Dry-runが成功した場合だけ明示適用します。
+
+```bash
+python tools/chapter_content_promotion.py \
+  --catalog content/master_catalog_v1.json \
+  --project-root . \
+  apply-bundle tmp/chapter-content-promotion-bundle/bundle \
+  --confirm-catalog-sha <source_catalog_sha256> \
+  --write
+```
+
+`validate`、`plan`、`bundle`、`verify-bundle`、および`--write`なしの`apply-bundle`は`data/master`を更新しません。適用は`add`対象だけに限定され、既存Entityの更新・削除・並び替えは拒否されます。
+
+詳細は[Chapter Content Pack Pipeline](./docs/CHAPTER_CONTENT_PACK_PIPELINE.md)、[Chapter Content Promotion](./docs/CHAPTER_CONTENT_PROMOTION.md)、[Chapter Content Promotion Bundle](./docs/CHAPTER_CONTENT_PROMOTION_BUNDLE.md)を参照してください。
 
 ## Steamデモ実行
 
@@ -200,7 +237,7 @@ python -m game.save.cli.migrate_save path/to/save.json
 個別テスト:
 
 ```bash
-python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_screen_router tests.test_screen_runtime tests.test_screen_runtime_initialization tests.test_screen_renderer tests.test_screen_action_dispatcher tests.test_steam_demo_composition tests.test_steam_demo_client tests.test_windows_release_build tests.test_steam_demo_qa tests.test_steam_store_readiness tests.test_player_support tests.test_player_support_qa tests.test_save_slice tests.test_save_migration tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen tests.test_economy_facility_screen tests.test_chapter_content_pack tests.test_chapter_content_promotion -v
+python -m unittest tests.test_demo_flow_slice tests.test_input_action_presentation tests.test_shared_action_screen_controller tests.test_screen_router tests.test_screen_runtime tests.test_screen_runtime_initialization tests.test_screen_renderer tests.test_screen_action_dispatcher tests.test_steam_demo_composition tests.test_steam_demo_client tests.test_windows_release_build tests.test_steam_demo_qa tests.test_steam_store_readiness tests.test_player_support tests.test_player_support_qa tests.test_save_slice tests.test_save_migration tests.test_quest_travel_screen tests.test_npc_field_event_screen tests.test_gathering_treasure_screen tests.test_item_equipment_screen tests.test_equipment_workshop_screen tests.test_economy_facility_screen tests.test_chapter_content_pack tests.test_chapter_content_promotion tests.test_chapter_content_promotion_contracts tests.test_chapter_content_promotion_bundle -v
 ```
 
 ## Repository Bootstrap Structure

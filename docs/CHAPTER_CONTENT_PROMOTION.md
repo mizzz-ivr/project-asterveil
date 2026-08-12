@@ -4,7 +4,9 @@
 
 `tools/chapter_content_pack.py`で作成した章パックを、既存の`data/master/*.sample.json`へ安全に統合するための事前検証手順を定義する。
 
-この工程ではMaster Dataを更新しない。出力するのはレビュー用のPromotion Plan、Summary、ローカライズ候補のみである。
+Promotion Plan生成工程ではMaster Dataを更新しない。出力するのはレビュー用のPromotion Plan、Summary、ローカライズ候補である。
+
+正式Masterへ追加する場合は、Planとは別責務の追加専用Patch Bundleを生成し、Catalog／Master／候補ファイルを再検証したうえで明示適用する。詳細は[章コンテンツ昇格Patch Bundle](./CHAPTER_CONTENT_PROMOTION_BUNDLE.md)を参照する。
 
 ## 2. 責務境界
 
@@ -14,7 +16,7 @@
 - Kind別Master候補を生成する
 - 旧版章パックとの差分を出力する
 
-### Chapter Content Promotion
+### Chapter Content Promotion Plan
 
 - 既存Master Catalogを読み込む
 - 章パックから既存Masterへの参照を解決する
@@ -22,6 +24,14 @@
 - 既存Questを含む依存循環を検出する
 - Promotion Planとローカライズ候補を生成する
 - Master Dataは変更しない
+
+### Chapter Content Promotion Bundle
+
+- `ready_for_review`のPlanから`add`対象だけを候補Masterへ追加する
+- Before／After Hashとレビュー用Diffを生成する
+- Bundle作成後のCatalog／Master変更を検出する
+- 明示指定がある場合だけ正式Masterへ書き込む
+- 既存Entityの更新・削除・並び替えは行わない
 
 ## 3. Master Catalog
 
@@ -61,6 +71,7 @@ content/master_catalog_v1.json
 - Event accept/complete quest → Quest
 - Event start battle → Encounter
 - Conversation npc → NPC
+- Conversation Choice Effect → Quest / Encounter
 
 ### 4.2 Quest依存循環
 
@@ -72,7 +83,7 @@ content/master_catalog_v1.json
 
 | 分類 | 条件 | 扱い |
 |---|---|---|
-| `add` | 既存Masterに同一IDがない | レビュー対象 |
+| `add` | 既存Masterに同一IDがない | Bundleレビュー対象 |
 | `unchanged` | IDと内容が完全一致 | Master更新不要 |
 | `conflict` | IDは同じだが内容が異なる | Promotionを拒否 |
 
@@ -108,6 +119,18 @@ tmp/content-promotion/ch02/
 └─ localization.ja.candidates.json
 ```
 
+### Patch Bundle生成
+
+```bash
+python tools/chapter_content_promotion.py \
+  --catalog content/master_catalog_v1.json \
+  --project-root . \
+  bundle content/packs/ch02/pack.json \
+  --output tmp/content-promotion-bundle/ch02
+```
+
+PlanとBundleは別ディレクトリへ出力される。候補Master、Unified Diff、Manifestをレビューし、Dry-run後に必要な場合だけ明示適用する。
+
 ### Strict Mode
 
 ```bash
@@ -122,8 +145,8 @@ Exit Code:
 
 | Code | 意味 |
 |---:|---|
-| 0 | Promotion Reviewへ進める |
-| 1 | JSON・Catalog・Pack契約エラー |
+| 0 | Promotion Reviewへ進める／Bundle検証成功 |
+| 1 | JSON・Catalog・Pack・Bundle契約エラー |
 | 2 | Strict ModeでWarningあり |
 | 3 | 未解決参照またはID競合でBlocked |
 
@@ -143,9 +166,11 @@ Exit Code:
 - Warning
 - `apply_supported: false`
 
+`apply_supported: false`は、Promotion Planそのものを直接適用しないことを示す。正式Masterへの追加は、Planから生成したPatch Bundleを別途検証して行う。
+
 Catalog SHA-256には各Master IDとEntity内容Hashを含める。
 
-Plan作成後にMasterが変更された場合はCatalog SHAが変わるため、古いPlanをそのまま利用しない。
+Plan作成後にMasterが変更された場合はCatalog SHAが変わるため、古いPlanやBundleをそのまま利用しない。
 
 ## 7. ローカライズ候補
 
@@ -172,12 +197,16 @@ content.location.ch02.forest.description
 1. 章パックを検証する
 2. Promotion Planを生成する
 3. `unresolved_references`と`conflicts`が空であることを確認する
-4. Catalog SHAが最新`main`と一致することを確認する
-5. `add`だけを対象に、別PRでMaster Dataへ反映する
-6. 各Repositoryの読込テストとPlayable回帰を実行する
-7. Objectiveや既存IDを変更する場合はSave Migration要否を判断する
+4. Patch Bundleを生成する
+5. `BUNDLE_SUMMARY.md`、Candidate、Diffをレビューする
+6. `verify-bundle`を実行する
+7. `apply-bundle`を`--write`なしで実行しDry-runする
+8. `source_catalog_sha256`を確認値として`--write`付きで明示適用する
+9. `git diff -- data/master`を確認する
+10. 各Repositoryの読込テストとPlayable回帰を実行する
+11. Master Data変更を専用PRとしてレビューする
 
-Promotion ToolからMaster Dataへ自動書込みは行わない。
+PlanからMasterへ直接書き込む機能は提供しない。
 
 ## 9. テスト観点
 
@@ -187,26 +216,33 @@ Promotion ToolからMaster Dataへ自動書込みは行わない。
 - 新規IDが`add`になる
 - 同一内容が`unchanged`になる
 - PlanとSummaryを生成できる
+- Patch Bundleと候補Masterを生成できる
+- Dry-runではMasterが変わらない
 
 ### 異常系
 
 - 未知のNPC、Enemy、Item
-- Event Actionの未知Quest / Encounter
+- Event／Conversation Actionの未知Quest / Encounter
 - 既存IDと内容差分
 - Catalog重複ID
 - 必須Masterファイル欠落
 - 既存Questと新規Questの依存循環
+- Bundle生成後のCatalog／Master変更
+- Candidate／Diff改変
+- 既存Entity変更・削除・並び替え
 
 ### 非破壊性
 
-- 検証前後で`data/master`の内容が変わらない
-- Promotion Planに自動適用機能がない
+- `validate`／`plan`／`bundle`／`verify-bundle`では`data/master`の内容が変わらない
+- `apply-bundle`も`--write`なしではMasterを変更しない
 - 参照専用Collectionへ追加しない
+- 既存Entityを自動更新・削除しない
 
 ## 10. 未対応
 
-- Promotion Planの自動適用
-- 翻訳文の生成・承認
-- 画像・音声Assetの整合確認
+- 既存Master Entityの更新・削除
+- ID競合の自動解決
+- 翻訳文の生成・承認・自動反映
+- 画像・音声Assetの整合確認・コピー
 - Save Migrationの自動生成
-- Master Entity単位の専用変更Workflow
+- Git commit／PRの自動作成
