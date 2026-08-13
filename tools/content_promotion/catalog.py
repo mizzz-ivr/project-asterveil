@@ -47,6 +47,23 @@ def digest(value: object) -> str:
     return hashlib.sha256(canonical(value).encode("utf-8")).hexdigest()
 
 
+def catalog_digest(
+    definitions: Mapping[str, Mapping[str, Any]],
+    entities: Mapping[str, Mapping[str, Mapping[str, Any]]],
+) -> str:
+    digest_source = {
+        kind: {
+            "definition": dict(definitions[kind]),
+            "entities": {
+                item_id: digest(entity)
+                for item_id, entity in sorted(index.items())
+            },
+        }
+        for kind, index in sorted(entities.items())
+    }
+    return digest(digest_source)
+
+
 def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -64,18 +81,18 @@ def require_string(value: object, field: str) -> str:
 
 
 def entity_id(row: Mapping[str, Any], fields: Sequence[str], source: str) -> str:
-    aliases = [
-        (field, value.strip())
+    aliases = {
+        field: value.strip()
         for field in fields
         if isinstance((value := row.get(field)), str) and value.strip()
-    ]
+    }
     if not aliases:
         raise PromotionError(f"entity_id_missing:{source}")
-    distinct_values = {value for _, value in aliases}
-    if len(distinct_values) > 1:
-        details = ",".join(f"{field}={value}" for field, value in aliases)
+    values = set(aliases.values())
+    if len(values) != 1:
+        details = ",".join(f"{field}={value}" for field, value in aliases.items())
         raise PromotionError(f"entity_id_alias_mismatch:{source}:{details}")
-    return aliases[0][1]
+    return next(iter(values))
 
 
 def load_catalog(definition_path: Path, project_root: Path | None = None) -> MasterCatalog:
@@ -110,14 +127,7 @@ def load_catalog(definition_path: Path, project_root: Path | None = None) -> Mas
             index[item_id] = dict(row)
         entities[kind] = index
 
-    digest_source = {
-        kind: {
-            "definition": dict(definitions[kind]),
-            "entities": {item_id: digest(entity) for item_id, entity in sorted(index.items())},
-        }
-        for kind, index in sorted(entities.items())
-    }
-    return MasterCatalog(root, definitions, entities, digest(digest_source))
+    return MasterCatalog(root, definitions, entities, catalog_digest(definitions, entities))
 
 
 def pack_index(pack: Mapping[str, Any]) -> dict[str, dict[str, Mapping[str, Any]]]:
