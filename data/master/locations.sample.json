@@ -55,5 +55,52 @@
     "default_encounter_id": "encounter.ch01.tide_serpent_boss",
     "can_return_to_hub": true,
     "unlock_condition": "flag.ch01.harbor_secured"
+  },
+  {
+    "location_id": "location.ch02.mist_harbor",
+    "name": "霧港",
+    "location_type": "town",
+    "description": "常霧に包まれた北方の港町。霧笛と古い石造倉庫が並び、第二章の探索拠点となる。",
+    "accessible_from": [
+      "location.town.astel",
+      "location.ch02.fogbound_marsh",
+      "location.ch02.echoing_bastion"
+    ],
+    "available_encounter_ids": [],
+    "can_return_to_hub": true,
+    "unlock_condition": "flag.ch02.access_granted"
+  },
+  {
+    "location_id": "location.ch02.fogbound_marsh",
+    "name": "霧渡り湿原",
+    "location_type": "field",
+    "description": "霧港の外縁に広がる湿原。視界を奪う白霧の中を魔物の遠吠えと淡い灯りが漂う。",
+    "accessible_from": [
+      "location.ch02.mist_harbor"
+    ],
+    "default_encounter_id": "encounter.ch02.mist_wolf",
+    "available_encounter_ids": [
+      "encounter.ch02.mist_wolf",
+      "encounter.ch02.lantern_moth_swarm",
+      "encounter.ch02.echo_patrol"
+    ],
+    "can_return_to_hub": true,
+    "unlock_condition": "flag.ch02.access_granted"
+  },
+  {
+    "location_id": "location.ch02.echoing_bastion",
+    "name": "残響砦",
+    "location_type": "dungeon",
+    "description": "霧の奥に取り残された旧砦。空の鎧が足音を反響させ、最深部には巨大な気配が潜む。",
+    "accessible_from": [
+      "location.ch02.fogbound_marsh"
+    ],
+    "default_encounter_id": "encounter.ch02.echo_patrol",
+    "available_encounter_ids": [
+      "encounter.ch02.echo_patrol",
+      "encounter.ch02.fog_behemoth_boss"
+    ],
+    "can_return_to_hub": true,
+    "unlock_condition": "flag.ch02.echoing_bastion_unlocked"
   }
 ]
