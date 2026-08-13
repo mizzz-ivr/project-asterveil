@@ -235,5 +235,85 @@
     "weight": 20,
     "break_power": 14,
     "precast_warning": false
+  },
+  {
+    "id": "skill.enemy.mist_fang",
+    "target_type": "single",
+    "target_scope": "single_enemy",
+    "cost": {
+      "sp": 10,
+      "cooldown": 0
+    },
+    "effect_blocks": [
+      {
+        "type": "damage",
+        "element": "water",
+        "power": 1.1
+      }
+    ],
+    "weight": 12,
+    "break_power": 10,
+    "precast_warning": false
+  },
+  {
+    "id": "skill.enemy.lantern_dust",
+    "target_type": "all",
+    "target_scope": "all_enemies",
+    "cost": {
+      "sp": 14,
+      "cooldown": 0
+    },
+    "effect_blocks": [
+      {
+        "type": "damage",
+        "element": "light",
+        "power": 0.75
+      }
+    ],
+    "weight": 14,
+    "break_power": 8,
+    "precast_warning": false
+  },
+  {
+    "id": "skill.enemy.echo_cleave",
+    "target_type": "single",
+    "target_scope": "single_enemy",
+    "cost": {
+      "sp": 12,
+      "cooldown": 0
+    },
+    "effect_blocks": [
+      {
+        "type": "damage",
+        "element": "none",
+        "power": 1.0
+      },
+      {
+        "type": "apply_effect",
+        "effect_id": "effect.debuff.defense_down"
+      }
+    ],
+    "weight": 14,
+    "break_power": 16,
+    "precast_warning": false
+  },
+  {
+    "id": "skill.enemy.fog_crush",
+    "target_type": "all",
+    "target_scope": "all_enemies",
+    "cost": {
+      "sp": 18,
+      "cooldown": 0
+    },
+    "effect_blocks": [
+      {
+        "type": "damage",
+        "element": "water",
+        "power": 1.2
+      }
+    ],
+    "weight": 22,
+    "break_power": 18,
+    "precast_warning": true
   }
 ]
