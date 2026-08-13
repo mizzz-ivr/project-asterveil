@@ -127,5 +127,98 @@
         "conditions": []
       }
     ]
+  },
+  {
+    "ai_profile_id": "enemy_ai.mist_wolf.hunter",
+    "action_rules": [
+      {
+        "rule_id": "rule.mist_wolf.mist_fang",
+        "priority": 70,
+        "action_type": "skill",
+        "skill_id": "skill.enemy.mist_fang",
+        "target_rule": "lowest_hp_enemy",
+        "conditions": []
+      },
+      {
+        "rule_id": "rule.mist_wolf.attack",
+        "priority": 20,
+        "action_type": "normal_attack",
+        "target_rule": "random_enemy",
+        "conditions": []
+      }
+    ]
+  },
+  {
+    "ai_profile_id": "enemy_ai.lantern_moth.swarm",
+    "action_rules": [
+      {
+        "rule_id": "rule.lantern_moth.lantern_dust",
+        "priority": 80,
+        "action_type": "skill",
+        "skill_id": "skill.enemy.lantern_dust",
+        "target_rule": "random_enemy",
+        "conditions": []
+      },
+      {
+        "rule_id": "rule.lantern_moth.attack",
+        "priority": 20,
+        "action_type": "normal_attack",
+        "target_rule": "random_enemy",
+        "conditions": []
+      }
+    ]
+  },
+  {
+    "ai_profile_id": "enemy_ai.echo_knight.breaker",
+    "action_rules": [
+      {
+        "rule_id": "rule.echo_knight.echo_cleave",
+        "priority": 80,
+        "action_type": "skill",
+        "skill_id": "skill.enemy.echo_cleave",
+        "target_rule": "lowest_hp_enemy",
+        "conditions": [
+          {
+            "type": "enemy_has_no_effect",
+            "effect_id": "effect.debuff.defense_down"
+          }
+        ]
+      },
+      {
+        "rule_id": "rule.echo_knight.attack",
+        "priority": 20,
+        "action_type": "normal_attack",
+        "target_rule": "lowest_hp_enemy",
+        "conditions": []
+      }
+    ]
+  },
+  {
+    "ai_profile_id": "enemy_ai.fog_behemoth.phase1",
+    "action_rules": [
+      {
+        "rule_id": "rule.fog_behemoth.fog_crush",
+        "priority": 90,
+        "action_type": "skill",
+        "skill_id": "skill.enemy.fog_crush",
+        "target_rule": "random_enemy",
+        "conditions": []
+      },
+      {
+        "rule_id": "rule.fog_behemoth.mist_fang",
+        "priority": 60,
+        "action_type": "skill",
+        "skill_id": "skill.enemy.mist_fang",
+        "target_rule": "lowest_hp_enemy",
+        "conditions": []
+      },
+      {
+        "rule_id": "rule.fog_behemoth.attack",
+        "priority": 20,
+        "action_type": "normal_attack",
+        "target_rule": "lowest_hp_enemy",
+        "conditions": []
+      }
+    ]
   }
 ]
