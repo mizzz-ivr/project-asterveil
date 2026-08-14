@@ -30,7 +30,7 @@ class BestiaryServiceTest(unittest.TestCase):
             set(self.catalog.profiles),
             set(self.catalog.definitions),
         )
-        self.assertEqual(len(self.catalog.definitions), 3)
+        self.assertEqual(len(self.catalog.definitions), 7)
         self.assertEqual(self.catalog.definitions["enemy.ch01.tide_serpent"].category, "boss")
 
     def test_unknown_entry_does_not_reveal_confidential_information(self) -> None:
@@ -110,10 +110,10 @@ class BestiaryServiceTest(unittest.TestCase):
         normal = self.service.progress_summary(state, category="normal")
         boss = self.service.progress_summary(state, category="boss")
 
-        self.assertEqual((overall.encountered_count, overall.total_count), (1, 3))
-        self.assertEqual((normal.encountered_count, normal.total_count), (1, 2))
-        self.assertEqual((boss.encountered_count, boss.total_count), (0, 1))
-        self.assertEqual(overall.encounter_rate_percent, 33)
+        self.assertEqual((overall.encountered_count, overall.total_count), (1, 7))
+        self.assertEqual((normal.encountered_count, normal.total_count), (1, 5))
+        self.assertEqual((boss.encountered_count, boss.total_count), (0, 2))
+        self.assertEqual(overall.encounter_rate_percent, 14)
 
     def test_invalid_battle_result_is_rejected_before_state_mutation(self) -> None:
         state = {}

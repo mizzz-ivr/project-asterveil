@@ -42,13 +42,13 @@ class BestiaryScreenTests(unittest.TestCase):
 
             self.assertEqual(BestiaryScreenMode.LIST, view.mode)
             self.assertEqual(BestiaryCategoryFilter.ALL, view.active_filter)
-            self.assertEqual(3, len(view.entries))
+            self.assertEqual(7, len(view.entries))
             first = view.entries[0]
             self.assertEqual("bestiary.slot.001", first.action_id)
             self.assertEqual("？？？", first.name)
             self.assertEqual(BestiaryUnlockStage.UNKNOWN, first.stage)
             self.assertIsNone(first.category_label)
-            self.assertNotIn("enemy.ch01", repr(view))
+            self.assertNotIn("enemy.", repr(view))
 
             detail = controller.activate_entry(first.action_id).view
             self.assertEqual(BestiaryScreenMode.DETAIL, detail.mode)
@@ -62,7 +62,7 @@ class BestiaryScreenTests(unittest.TestCase):
             self.assertEqual(tuple(), detail.detail.weakness_elements)
             self.assertEqual(tuple(), detail.detail.weakness_weapon_types)
             self.assertIsNone(detail.detail.description)
-            self.assertNotIn("enemy.ch01", repr(detail))
+            self.assertNotIn("enemy.", repr(detail))
 
     def test_category_filter_does_not_classify_unknown_entries(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -125,12 +125,12 @@ class BestiaryScreenTests(unittest.TestCase):
             serialized = json.dumps(scene.to_dict(), ensure_ascii=False)
 
             self.assertIn("bestiary.slot.001", serialized)
-            self.assertNotIn("enemy.ch01", serialized)
+            self.assertNotIn("enemy.", serialized)
 
             detail_view = controller.activate_entry("bestiary.slot.001").view
             detail_scene = registry.build(SteamDemoRouteId.BESTIARY, detail_view)
             detail_serialized = json.dumps(detail_scene.to_dict(), ensure_ascii=False)
-            self.assertNotIn("enemy.ch01", detail_serialized)
+            self.assertNotIn("enemy.", detail_serialized)
             self.assertEqual(tuple(), detail_scene.sections)
 
 
@@ -163,7 +163,7 @@ class BestiaryRuntimeIntegrationTests(unittest.TestCase):
 
             scene = composition.action_dispatcher.current_scene()
             self.assertIsNotNone(scene.command_for_entry("bestiary.slot.001"))
-            self.assertNotIn("enemy.ch01", json.dumps(scene.to_dict(), ensure_ascii=False))
+            self.assertNotIn("enemy.", json.dumps(scene.to_dict(), ensure_ascii=False))
 
             detail = composition.action_dispatcher.activate_entry(
                 SteamDemoRouteId.BESTIARY,

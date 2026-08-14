@@ -29,5 +29,46 @@
     ],
     "description": "古い潮門遺跡を縄張りとする大型海蛇。雷と刺突に弱いが、長期戦では潮の咆哮で戦況を崩してくる。",
     "mastery_kill_count": 3
+  },
+  {
+    "enemy_id": "enemy.ch02.mist_wolf",
+    "display_name": "霧狼",
+    "category": "normal",
+    "habitat_location_ids": [
+      "location.ch02.fogbound_marsh"
+    ],
+    "description": "霧渡り湿原を群れで巡回する灰白の獣。霧に紛れて弱った獲物を狙うため、素早い攻撃で隊列を崩されやすい。",
+    "mastery_kill_count": 5
+  },
+  {
+    "enemy_id": "enemy.ch02.lantern_moth",
+    "display_name": "灯蛾",
+    "category": "normal",
+    "habitat_location_ids": [
+      "location.ch02.fogbound_marsh",
+      "location.ch02.echoing_bastion"
+    ],
+    "description": "淡い光を宿した大型の蛾。霧の中に光粉を散らし、群れで広範囲へ圧力をかけてくる。",
+    "mastery_kill_count": 5
+  },
+  {
+    "enemy_id": "enemy.ch02.echo_knight",
+    "display_name": "残響騎士",
+    "category": "normal",
+    "habitat_location_ids": [
+      "location.ch02.echoing_bastion"
+    ],
+    "description": "残響砦を歩き続ける空の甲冑。高い防御力を持ち、重い斬撃で守りを崩してから追撃する。",
+    "mastery_kill_count": 4
+  },
+  {
+    "enemy_id": "enemy.ch02.fog_behemoth",
+    "display_name": "霧喰らい",
+    "category": "boss",
+    "habitat_location_ids": [
+      "location.ch02.echoing_bastion"
+    ],
+    "description": "残響砦の最深部に潜む巨獣。周囲の霧を吸い込み、広範囲へ叩きつける圧力攻撃を繰り返す。",
+    "mastery_kill_count": 3
   }
 ]

@@ -72,5 +72,103 @@
     "skill_rotation_id": "rotation.enemy.tide_serpent.boss",
     "drop_table_id": "drop.enemy.tide_serpent",
     "ai_profile_id": "enemy_ai.tide_serpent.phase1"
+  },
+  {
+    "id": "enemy.ch02.mist_wolf",
+    "level": 9,
+    "stats": {
+      "hp": 180,
+      "atk": 22,
+      "def": 13,
+      "spd": 20
+    },
+    "skill_ids": [
+      "skill.enemy.mist_fang"
+    ],
+    "weakness": {
+      "elements": [
+        "fire"
+      ],
+      "weapon_types": [
+        "slash"
+      ]
+    },
+    "skill_rotation_id": "rotation.enemy.mist_wolf.basic",
+    "drop_table_id": "drop.enemy.mist_wolf",
+    "ai_profile_id": "enemy_ai.mist_wolf.hunter"
+  },
+  {
+    "id": "enemy.ch02.lantern_moth",
+    "level": 10,
+    "stats": {
+      "hp": 145,
+      "atk": 19,
+      "def": 12,
+      "spd": 24
+    },
+    "skill_ids": [
+      "skill.enemy.lantern_dust"
+    ],
+    "weakness": {
+      "elements": [
+        "wind"
+      ],
+      "weapon_types": [
+        "pierce"
+      ]
+    },
+    "skill_rotation_id": "rotation.enemy.lantern_moth.swarm",
+    "drop_table_id": "drop.enemy.lantern_moth",
+    "ai_profile_id": "enemy_ai.lantern_moth.swarm"
+  },
+  {
+    "id": "enemy.ch02.echo_knight",
+    "level": 12,
+    "stats": {
+      "hp": 260,
+      "atk": 25,
+      "def": 24,
+      "spd": 12
+    },
+    "skill_ids": [
+      "skill.enemy.echo_cleave"
+    ],
+    "weakness": {
+      "elements": [
+        "thunder"
+      ],
+      "weapon_types": [
+        "blunt"
+      ]
+    },
+    "skill_rotation_id": "rotation.enemy.echo_knight.guard",
+    "drop_table_id": "drop.enemy.echo_knight",
+    "ai_profile_id": "enemy_ai.echo_knight.breaker"
+  },
+  {
+    "id": "enemy.ch02.fog_behemoth",
+    "level": 15,
+    "stats": {
+      "hp": 620,
+      "atk": 34,
+      "def": 26,
+      "spd": 10
+    },
+    "skill_ids": [
+      "skill.enemy.fog_crush",
+      "skill.enemy.mist_fang"
+    ],
+    "weakness": {
+      "elements": [
+        "fire",
+        "thunder"
+      ],
+      "weapon_types": [
+        "pierce"
+      ]
+    },
+    "skill_rotation_id": "rotation.enemy.fog_behemoth.boss",
+    "drop_table_id": "drop.enemy.fog_behemoth",
+    "ai_profile_id": "enemy_ai.fog_behemoth.phase1"
   }
 ]
