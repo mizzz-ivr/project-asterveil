@@ -450,5 +450,199 @@
       "completion_flag": "flag.workshop.story.rank3.order_completed"
     },
     "target_location_id": "location.town.astel"
+  },
+  {
+    "quest_id": "quest.ch02.first_trace",
+    "id": "quest.ch02.first_trace",
+    "title": "最初の痕跡",
+    "description": "霧港へ到着し、霧渡り湿原で目撃された霧狼を追跡する。",
+    "category": "main",
+    "repeatable": false,
+    "reporting_npc_id": "npc.ch02.fog_keeper",
+    "availability": {
+      "required_quest_ids": [
+        "quest.ch01.tide_serpent_subjugation"
+      ],
+      "required_flags": [
+        "flag.ch02.access_granted"
+      ],
+      "min_level": 8
+    },
+    "encounter_id": "encounter.ch02.mist_wolf",
+    "objectives": [
+      {
+        "id": "obj.ch02.first_trace.kill",
+        "type": "kill_enemy",
+        "description": "霧渡り湿原で霧狼を1体討伐する。",
+        "target_enemy_id": "enemy.ch02.mist_wolf",
+        "required_count": 1
+      }
+    ],
+    "reward": {
+      "exp": 180,
+      "gold": 100,
+      "items": [],
+      "completion_flag": "flag.ch02.first_trace_complete"
+    },
+    "target_location_id": "location.ch02.fogbound_marsh"
+  },
+  {
+    "quest_id": "quest.ch02.marsh_patrol",
+    "id": "quest.ch02.marsh_patrol",
+    "title": "霧灯の群れを払え",
+    "description": "湿原の視界を乱す灯蛾の群れを排除し、探索路を安定させる。",
+    "category": "sub",
+    "repeatable": false,
+    "reporting_npc_id": "npc.ch02.fog_keeper",
+    "availability": {
+      "required_quest_ids": [
+        "quest.ch02.first_trace"
+      ],
+      "required_flags": [
+        "flag.ch02.first_trace_complete"
+      ],
+      "min_level": 8
+    },
+    "encounter_id": "encounter.ch02.lantern_moth_swarm",
+    "objectives": [
+      {
+        "id": "obj.ch02.marsh_patrol.kill",
+        "type": "kill_enemy",
+        "description": "灯蛾を2体討伐する。",
+        "target_enemy_id": "enemy.ch02.lantern_moth",
+        "required_count": 2
+      }
+    ],
+    "reward": {
+      "exp": 150,
+      "gold": 120,
+      "items": [
+        {
+          "item_id": "item.consumable.focus_drop",
+          "amount": 1
+        }
+      ],
+      "completion_flag": "flag.ch02.marsh_patrol_complete"
+    },
+    "target_location_id": "location.ch02.fogbound_marsh"
+  },
+  {
+    "quest_id": "quest.ch02.mist_trace_delivery",
+    "id": "quest.ch02.mist_trace_delivery",
+    "title": "霧痕の記憶片",
+    "description": "湿原の霧痕から回収した記憶片を霧守へ届け、異変の正体を調べる。",
+    "category": "delivery",
+    "repeatable": false,
+    "reporting_npc_id": "npc.ch02.fog_keeper",
+    "availability": {
+      "required_quest_ids": [
+        "quest.ch02.first_trace"
+      ],
+      "required_flags": [
+        "flag.field_event.ch02.mist_trace_collected"
+      ],
+      "min_level": 8
+    },
+    "objectives": [
+      {
+        "id": "obj.ch02.mist_trace_delivery.turn_in",
+        "type": "turn_in_items",
+        "description": "記憶片を2個納品する。",
+        "required_items": [
+          {
+            "item_id": "item.material.memory_shard",
+            "quantity": 2
+          }
+        ],
+        "allow_partial_turn_in": false
+      }
+    ],
+    "reward": {
+      "exp": 120,
+      "gold": 90,
+      "items": [
+        {
+          "item_id": "item.consumable.mini_potion",
+          "amount": 1
+        }
+      ],
+      "completion_flag": "flag.ch02.mist_trace_delivered"
+    },
+    "target_location_id": "location.ch02.mist_harbor"
+  },
+  {
+    "quest_id": "quest.ch02.echo_patrol",
+    "id": "quest.ch02.echo_patrol",
+    "title": "残響を追って",
+    "description": "霧痕の先に現れた残響騎士を退け、旧砦へ続く道を確保する。",
+    "category": "main",
+    "repeatable": false,
+    "reporting_npc_id": "npc.ch02.fog_keeper",
+    "availability": {
+      "required_quest_ids": [
+        "quest.ch02.first_trace"
+      ],
+      "required_flags": [
+        "flag.field_event.ch02.mist_trace_collected"
+      ],
+      "min_level": 9
+    },
+    "encounter_id": "encounter.ch02.echo_patrol",
+    "objectives": [
+      {
+        "id": "obj.ch02.echo_patrol.kill",
+        "type": "kill_enemy",
+        "description": "残響騎士を1体討伐する。",
+        "target_enemy_id": "enemy.ch02.echo_knight",
+        "required_count": 1
+      }
+    ],
+    "reward": {
+      "exp": 240,
+      "gold": 160,
+      "items": [],
+      "completion_flag": "flag.ch02.echoing_bastion_unlocked"
+    },
+    "target_location_id": "location.ch02.fogbound_marsh"
+  },
+  {
+    "quest_id": "quest.ch02.fog_behemoth_subjugation",
+    "id": "quest.ch02.fog_behemoth_subjugation",
+    "title": "霧喰らいを鎮めよ",
+    "description": "残響砦の最深部に潜む霧喰らいを討伐し、霧港を覆う異変に一区切りをつける。",
+    "category": "main",
+    "repeatable": false,
+    "reporting_npc_id": "npc.ch02.fog_keeper",
+    "availability": {
+      "required_quest_ids": [
+        "quest.ch02.echo_patrol"
+      ],
+      "required_flags": [
+        "flag.ch02.echoing_bastion_unlocked"
+      ],
+      "min_level": 10
+    },
+    "encounter_id": "encounter.ch02.fog_behemoth_boss",
+    "objectives": [
+      {
+        "id": "obj.ch02.fog_behemoth.kill",
+        "type": "kill_enemy",
+        "description": "霧喰らいを1体討伐する。",
+        "target_enemy_id": "enemy.ch02.fog_behemoth",
+        "required_count": 1
+      }
+    ],
+    "reward": {
+      "exp": 500,
+      "gold": 300,
+      "items": [
+        {
+          "item_id": "item.material.memory_shard",
+          "amount": 2
+        }
+      ],
+      "completion_flag": "flag.ch02.chapter_clear"
+    },
+    "target_location_id": "location.ch02.echoing_bastion"
   }
 ]
