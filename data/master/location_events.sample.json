@@ -9,9 +9,7 @@
       "required_quest_status": {
         "quest.ch01.missing_port_record": "in_progress"
       },
-      "excluded_flags": [
-        "flag.ch01.tidal_flats_intro_seen"
-      ]
+      "excluded_flags": ["flag.ch01.tidal_flats_intro_seen"]
     },
     "dialogue_lines": [
       "干潟に濃い霧が立ち込め、亡霊が姿を現した。"
