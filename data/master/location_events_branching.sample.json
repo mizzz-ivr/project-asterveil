@@ -175,5 +175,107 @@
         ]
       }
     ]
+  },
+  {
+    "event_id": "event.field.ch02.fogbound_marsh.mist_trace",
+    "location_id": "location.ch02.fogbound_marsh",
+    "name": "霧に残る記憶の痕",
+    "description": "白霧の奥で淡く脈打つ光。足元には砕けた記憶片が散らばっている。",
+    "trigger_type": "manual_explore",
+    "repeatable": true,
+    "required_flags": [
+      "flag.ch02.first_trace_complete"
+    ],
+    "excluded_flags": [
+      "flag.field_event.ch02.mist_trace_collected"
+    ],
+    "choices": [
+      {
+        "choice_id": "choice.inspect_trace",
+        "text": "霧の痕跡を詳しく調べる",
+        "outcomes": [
+          {
+            "outcome_type": "show_message",
+            "params": {
+              "message": "霧の中から古い記憶片を2個回収した。断片には砦らしき影が焼き付いている。"
+            }
+          },
+          {
+            "outcome_type": "grant_items",
+            "params": {
+              "item_id": "item.material.memory_shard",
+              "amount": "2"
+            }
+          },
+          {
+            "outcome_type": "set_flag",
+            "params": {
+              "flag_id": "flag.field_event.ch02.mist_trace_collected"
+            }
+          }
+        ]
+      },
+      {
+        "choice_id": "choice.leave_trace",
+        "text": "今は触れずに目印だけ残す",
+        "outcomes": [
+          {
+            "outcome_type": "show_message",
+            "params": {
+              "message": "霧の流れを記録し、安全な場所まで一度戻ることにした。"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "event_id": "event.field.ch02.fogbound_marsh.lantern_lure",
+    "location_id": "location.ch02.fogbound_marsh",
+    "name": "霧中を漂う灯り",
+    "description": "霧の向こうを二つの淡い灯りが揺れている。追えば近道か、魔物の誘いかもしれない。",
+    "trigger_type": "manual_explore",
+    "repeatable": true,
+    "required_flags": [
+      "flag.ch02.first_trace_complete"
+    ],
+    "choices": [
+      {
+        "choice_id": "choice.keep_distance",
+        "text": "距離を保って迂回する",
+        "outcomes": [
+          {
+            "outcome_type": "show_message",
+            "params": {
+              "message": "灯りから距離を取り、霧狼の足跡を頼りに安全な道を進んだ。"
+            }
+          }
+        ]
+      },
+      {
+        "choice_id": "choice.follow_lights",
+        "text": "灯りを追う",
+        "outcomes": [
+          {
+            "outcome_type": "show_message",
+            "params": {
+              "message": "灯りの正体は灯蛾の群れだった。羽音とともに戦闘が始まる。"
+            }
+          },
+          {
+            "outcome_type": "start_battle",
+            "params": {
+              "encounter_id": "encounter.ch02.lantern_moth_swarm"
+            }
+          },
+          {
+            "outcome_type": "set_flag",
+            "params": {
+              "flag_id": "flag.field_event.ch02.lantern_lure_faced"
+            }
+          }
+        ]
+      }
+    ]
   }
 ]
