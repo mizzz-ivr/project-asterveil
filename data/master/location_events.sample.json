@@ -9,7 +9,9 @@
       "required_quest_status": {
         "quest.ch01.missing_port_record": "in_progress"
       },
-      "excluded_flags": ["flag.ch01.tidal_flats_intro_seen"]
+      "excluded_flags": [
+        "flag.ch01.tidal_flats_intro_seen"
+      ]
     },
     "dialogue_lines": [
       "干潟に濃い霧が立ち込め、亡霊が姿を現した。"
@@ -25,6 +27,96 @@
         "action_type": "set_flag",
         "params": {
           "flag_id": "flag.ch01.tidal_flats_intro_seen"
+        }
+      }
+    ]
+  },
+  {
+    "event_id": "event.location.ch02.route_unlock",
+    "trigger_type": "on_enter_location",
+    "location_id": "location.town.astel",
+    "priority": 400,
+    "repeatable": false,
+    "condition": {
+      "required_quest_status": {
+        "quest.ch01.tide_serpent_subjugation": "completed"
+      },
+      "excluded_flags": [
+        "flag.ch02.access_granted"
+      ]
+    },
+    "dialogue_lines": [
+      "潮門の脅威が消えた知らせを受け、港長オルドが北方の霧港へ向かう船便を手配した。"
+    ],
+    "actions": [
+      {
+        "action_type": "set_flag",
+        "params": {
+          "flag_id": "flag.ch02.access_granted"
+        }
+      }
+    ]
+  },
+  {
+    "event_id": "event.location.ch02.fogbound_marsh.first_entry",
+    "trigger_type": "on_enter_location",
+    "location_id": "location.ch02.fogbound_marsh",
+    "priority": 300,
+    "repeatable": false,
+    "condition": {
+      "required_quest_status": {
+        "quest.ch02.first_trace": "in_progress"
+      },
+      "excluded_flags": [
+        "flag.ch02.marsh_intro_seen"
+      ]
+    },
+    "dialogue_lines": [
+      "白霧の向こうで低い唸り声が響く。足元の泥から霧狼が飛び出した。"
+    ],
+    "actions": [
+      {
+        "action_type": "start_battle",
+        "params": {
+          "encounter_id": "encounter.ch02.mist_wolf"
+        }
+      },
+      {
+        "action_type": "set_flag",
+        "params": {
+          "flag_id": "flag.ch02.marsh_intro_seen"
+        }
+      }
+    ]
+  },
+  {
+    "event_id": "event.location.ch02.echoing_bastion.first_entry",
+    "trigger_type": "on_enter_location",
+    "location_id": "location.ch02.echoing_bastion",
+    "priority": 300,
+    "repeatable": false,
+    "condition": {
+      "required_quest_status": {
+        "quest.ch02.fog_behemoth_subjugation": "in_progress"
+      },
+      "excluded_flags": [
+        "flag.ch02.bastion_intro_seen"
+      ]
+    },
+    "dialogue_lines": [
+      "砦の回廊に金属音が反響する。空の鎧と霧狼の巡回隊が進路を塞いだ。"
+    ],
+    "actions": [
+      {
+        "action_type": "start_battle",
+        "params": {
+          "encounter_id": "encounter.ch02.echo_patrol"
+        }
+      },
+      {
+        "action_type": "set_flag",
+        "params": {
+          "flag_id": "flag.ch02.bastion_intro_seen"
         }
       }
     ]
