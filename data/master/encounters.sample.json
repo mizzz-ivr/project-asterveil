@@ -47,5 +47,54 @@
         "slot": "front"
       }
     ]
+  },
+  {
+    "encounter_id": "encounter.ch02.mist_wolf",
+    "description": "霧の中から現れる霧狼1体との基本戦闘。",
+    "enemies": [
+      {
+        "enemy_id": "enemy.ch02.mist_wolf",
+        "count": 1,
+        "slot": "front"
+      }
+    ]
+  },
+  {
+    "encounter_id": "encounter.ch02.lantern_moth_swarm",
+    "description": "灯蛾2体が霧の上空から一斉に襲いかかる編成。",
+    "enemies": [
+      {
+        "enemy_id": "enemy.ch02.lantern_moth",
+        "count": 2,
+        "slot": "mid"
+      }
+    ]
+  },
+  {
+    "encounter_id": "encounter.ch02.echo_patrol",
+    "description": "残響騎士と霧狼が連携して巡回する混成編成。",
+    "enemies": [
+      {
+        "enemy_id": "enemy.ch02.echo_knight",
+        "count": 1,
+        "slot": "front"
+      },
+      {
+        "enemy_id": "enemy.ch02.mist_wolf",
+        "count": 1,
+        "slot": "mid"
+      }
+    ]
+  },
+  {
+    "encounter_id": "encounter.ch02.fog_behemoth_boss",
+    "description": "残響砦の最深部で霧を喰らう巨獣と対峙するボス戦。",
+    "enemies": [
+      {
+        "enemy_id": "enemy.ch02.fog_behemoth",
+        "count": 1,
+        "slot": "front"
+      }
+    ]
   }
 ]
