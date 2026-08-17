@@ -157,6 +157,110 @@ jobs:
           print("promotion bundle verified")
           PY
 
+      - name: Validate Chapter 2 pack against current Master Catalog
+        run: |
+          python tools/chapter_content_promotion.py \
+            --catalog content/master_catalog_v1.json \
+            --project-root . \
+            validate content/packs/ch02/pack.json
+
+      - name: Generate Chapter 2 promotion review artifacts
+        run: |
+          python tools/chapter_content_promotion.py \
+            --catalog content/master_catalog_v1.json \
+            --project-root . \
+            plan content/packs/ch02/pack.json \
+            --output tmp/ch02-content-promotion
+
+      - name: Verify Chapter 2 promotion plan contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("tmp/ch02-content-promotion")
+          plan = json.loads((root / "PROMOTION_PLAN.json").read_text(encoding="utf-8"))
+          expected_conversations = {
+              "dialogue.ch02.fog_keeper.first_trace_offer",
+              "dialogue.ch02.fog_keeper.first_trace_progress",
+              "dialogue.ch02.fog_keeper.first_trace_ready",
+              "dialogue.ch02.fog_keeper.marsh_patrol_offer",
+              "dialogue.ch02.fog_keeper.marsh_patrol_progress",
+              "dialogue.ch02.fog_keeper.marsh_patrol_ready",
+              "dialogue.ch02.fog_keeper.mist_trace_offer",
+              "dialogue.ch02.fog_keeper.mist_trace_progress",
+              "dialogue.ch02.fog_keeper.echo_patrol_offer",
+              "dialogue.ch02.fog_keeper.echo_patrol_progress",
+              "dialogue.ch02.fog_keeper.echo_patrol_ready",
+              "dialogue.ch02.fog_keeper.boss_offer",
+              "dialogue.ch02.fog_keeper.boss_progress",
+              "dialogue.ch02.fog_keeper.boss_ready",
+              "dialogue.ch02.fog_keeper.chapter_clear",
+          }
+          assert plan["status"] == "ready_for_review", plan
+          assert not plan["unresolved_references"]
+          assert not plan["conflicts"]
+          assert set(plan["classifications"]["conversations"]["add"]) == expected_conversations
+          assert plan["classifications"]["conversations"]["conflict"] == []
+          for kind in ("locations", "encounters", "quests", "events"):
+              assert plan["classifications"][kind]["add"] == [], (kind, plan["classifications"][kind])
+              assert plan["classifications"][kind]["conflict"] == [], (kind, plan["classifications"][kind])
+          print("Chapter 2 promotion plan verified")
+          PY
+
+      - name: Generate Chapter 2 promotion patch bundle
+        run: |
+          python tools/chapter_content_promotion.py \
+            --catalog content/master_catalog_v1.json \
+            --project-root . \
+            bundle content/packs/ch02/pack.json \
+            --output tmp/ch02-content-promotion-bundle
+
+      - name: Verify Chapter 2 bundle and dry-run apply
+        run: |
+          python tools/chapter_content_promotion.py \
+            --catalog content/master_catalog_v1.json \
+            --project-root . \
+            verify-bundle tmp/ch02-content-promotion-bundle/bundle
+
+          CATALOG_SHA=$(python - <<'PY'
+          import json
+          from pathlib import Path
+          manifest = json.loads(
+              Path("tmp/ch02-content-promotion-bundle/bundle/BUNDLE_MANIFEST.json").read_text(encoding="utf-8")
+          )
+          print(manifest["source_catalog_sha256"])
+          PY
+          )
+
+          python tools/chapter_content_promotion.py \
+            --catalog content/master_catalog_v1.json \
+            --project-root . \
+            apply-bundle tmp/ch02-content-promotion-bundle/bundle \
+            --confirm-catalog-sha "$CATALOG_SHA"
+
+          git diff --exit-code -- data/master
+
+      - name: Verify Chapter 2 bundle contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("tmp/ch02-content-promotion-bundle")
+          bundle = root / "bundle"
+          manifest = json.loads((bundle / "BUNDLE_MANIFEST.json").read_text(encoding="utf-8"))
+          files = manifest["files"]
+          assert manifest["bundle_type"] == "chapter_content_promotion_add_only"
+          assert manifest["mode"] == "add_only"
+          assert len(files) == 1, files
+          assert files[0]["collection"] == "conversations", files[0]
+          assert len(files[0]["added_ids"]) == 15, files[0]
+          assert (bundle / files[0]["candidate_path"]).exists()
+          assert (bundle / files[0]["diff_path"]).exists()
+          print("Chapter 2 promotion bundle verified")
+          PY
+
       - name: Upload promotion review artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -164,5 +268,7 @@ jobs:
           path: |
             tmp/chapter-content-promotion
             tmp/chapter-content-promotion-bundle
+            tmp/ch02-content-promotion
+            tmp/ch02-content-promotion-bundle
           if-no-files-found: error
           retention-days: 14
