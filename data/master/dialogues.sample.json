@@ -970,5 +970,569 @@
     "lines": [
       "上位探索依頼の達成確認済みです。希少素材向けの研磨剤レシピを運用記録へ追加しておきます。"
     ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.boss_offer",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 700,
+    "condition": {
+      "required_flags": [
+        "flag.ch02.echoing_bastion_unlocked"
+      ],
+      "excluded_flags": [
+        "flag.quest.accepted:quest.ch02.fog_behemoth_subjugation",
+        "flag.ch02.chapter_clear"
+      ]
+    },
+    "lines": [],
+    "steps": [
+      {
+        "step_id": "step.boss_offer",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "砦の最深部から霧が逆流している。記録にある『霧喰らい』が目覚めた可能性が高い。",
+        "choices": [
+          {
+            "choice_id": "choice.boss_accept",
+            "text": "霧喰らい討伐へ向かう",
+            "next_step_id": "step.boss_after_accept",
+            "effects": [
+              {
+                "action_type": "accept_quest",
+                "params": {
+                  "quest_id": "quest.ch02.fog_behemoth_subjugation"
+                }
+              }
+            ]
+          },
+          {
+            "choice_id": "choice.boss_later",
+            "text": "準備を整える",
+            "next_step_id": "step.boss_later",
+            "effects": [
+              {
+                "action_type": "end_dialogue",
+                "params": {}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "step_id": "step.boss_after_accept",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "水と雷の攻撃に備えて。大技の前兆を見たら、無理に攻め続けないで。"
+      },
+      {
+        "step_id": "step.boss_later",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "焦らなくていい。砦に入る前に回復と装備を確認して。"
+      }
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.boss_progress",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 710,
+    "condition": {
+      "required_quest_status": {
+        "quest.ch02.fog_behemoth_subjugation": "in_progress"
+      }
+    },
+    "lines": [
+      "霧喰らいは砦の最深部。霧圧が高まる前兆を見落とさないで。"
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.boss_ready",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 720,
+    "condition": {
+      "required_quest_status": {
+        "quest.ch02.fog_behemoth_subjugation": "ready_to_complete"
+      }
+    },
+    "lines": [],
+    "steps": [
+      {
+        "step_id": "step.boss_report",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "……霧圧が下がっている。討伐できたのね。記録を確定させましょう。",
+        "choices": [
+          {
+            "choice_id": "choice.boss_report",
+            "text": "霧喰らい討伐を報告する",
+            "next_step_id": "step.boss_reported",
+            "effects": [
+              {
+                "action_type": "report_quest",
+                "params": {
+                  "quest_id": "quest.ch02.fog_behemoth_subjugation"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "step_id": "step.boss_reported",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "これで霧港は持ち直せる。あなたが開いた道は、次の航路にも繋がるはず。"
+      }
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.chapter_clear",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 800,
+    "condition": {
+      "required_flags": [
+        "flag.ch02.chapter_clear"
+      ]
+    },
+    "lines": [
+      "霧はまだ完全には消えていない。でも港の灯りは戻った。次の航路を調べる間、ここでは自由に探索していって。"
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.echo_patrol_offer",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 670,
+    "condition": {
+      "required_flags": [
+        "flag.ch02.mist_trace_delivered"
+      ],
+      "excluded_flags": [
+        "flag.quest.accepted:quest.ch02.echo_patrol",
+        "flag.ch02.echoing_bastion_unlocked"
+      ]
+    },
+    "lines": [],
+    "steps": [
+      {
+        "step_id": "step.echo_patrol_offer",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "解析できた。記憶片には旧砦へ向かう残響騎士の記録が残っている。巡回隊を追って道を確保して。",
+        "choices": [
+          {
+            "choice_id": "choice.echo_patrol_accept",
+            "text": "残響騎士を追う",
+            "next_step_id": "step.echo_patrol_after_accept",
+            "effects": [
+              {
+                "action_type": "accept_quest",
+                "params": {
+                  "quest_id": "quest.ch02.echo_patrol"
+                }
+              }
+            ]
+          },
+          {
+            "choice_id": "choice.echo_patrol_later",
+            "text": "装備を整えてから向かう",
+            "next_step_id": "step.echo_patrol_later",
+            "effects": [
+              {
+                "action_type": "end_dialogue",
+                "params": {}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "step_id": "step.echo_patrol_after_accept",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "湿原の奥へ。残響騎士だけでなく霧狼も同行しているはずよ。"
+      },
+      {
+        "step_id": "step.echo_patrol_later",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "正しい判断ね。残響砦の手前は霧が一段濃い。"
+      }
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.echo_patrol_progress",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 680,
+    "condition": {
+      "required_quest_status": {
+        "quest.ch02.echo_patrol": "in_progress"
+      }
+    },
+    "lines": [
+      "残響騎士は正面から受けると硬い。守りを崩してから一気に攻めて。"
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.echo_patrol_ready",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 690,
+    "condition": {
+      "required_quest_status": {
+        "quest.ch02.echo_patrol": "ready_to_complete"
+      }
+    },
+    "lines": [],
+    "steps": [
+      {
+        "step_id": "step.echo_patrol_report",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "巡回隊を退けたのね。これなら残響砦へ入れる。",
+        "choices": [
+          {
+            "choice_id": "choice.echo_patrol_report",
+            "text": "巡回結果を報告する",
+            "next_step_id": "step.echo_patrol_reported",
+            "effects": [
+              {
+                "action_type": "report_quest",
+                "params": {
+                  "quest_id": "quest.ch02.echo_patrol"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "step_id": "step.echo_patrol_reported",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "砦への道を地図に反映したわ。最深部の大きな反応には十分注意して。"
+      }
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.first_trace_offer",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 600,
+    "condition": {
+      "required_flags": [
+        "flag.ch02.access_granted"
+      ],
+      "excluded_flags": [
+        "flag.quest.accepted:quest.ch02.first_trace",
+        "flag.ch02.first_trace_complete"
+      ]
+    },
+    "lines": [],
+    "steps": [
+      {
+        "step_id": "step.first_trace_offer",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "霧港へようこそ。まず湿原の霧狼を追い、霧の濃まり方を確かめてほしい。",
+        "choices": [
+          {
+            "choice_id": "choice.first_trace_accept",
+            "text": "調査を引き受ける",
+            "next_step_id": "step.first_trace_after_accept",
+            "effects": [
+              {
+                "action_type": "accept_quest",
+                "params": {
+                  "quest_id": "quest.ch02.first_trace"
+                }
+              }
+            ]
+          },
+          {
+            "choice_id": "choice.first_trace_later",
+            "text": "準備してから受ける",
+            "next_step_id": "step.first_trace_later",
+            "effects": [
+              {
+                "action_type": "end_dialogue",
+                "params": {}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "step_id": "step.first_trace_after_accept",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "依頼状況を確認して、受注できていれば霧渡り湿原へ。霧狼の動きを見逃さないで。"
+      },
+      {
+        "step_id": "step.first_trace_later",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "了解。霧は待ってくれないけれど、無理な出発はもっと危険よ。"
+      }
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.first_trace_progress",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 610,
+    "condition": {
+      "required_quest_status": {
+        "quest.ch02.first_trace": "in_progress"
+      }
+    },
+    "lines": [
+      "霧狼は湿原の浅瀬を回っている。足跡より、霧が渦を巻く場所を追って。"
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.first_trace_ready",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 620,
+    "condition": {
+      "required_quest_status": {
+        "quest.ch02.first_trace": "ready_to_complete"
+      }
+    },
+    "lines": [],
+    "steps": [
+      {
+        "step_id": "step.first_trace_report",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "戻ったのね。霧狼の様子を報告して。",
+        "choices": [
+          {
+            "choice_id": "choice.first_trace_report",
+            "text": "調査結果を報告する",
+            "next_step_id": "step.first_trace_reported",
+            "effects": [
+              {
+                "action_type": "report_quest",
+                "params": {
+                  "quest_id": "quest.ch02.first_trace"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "step_id": "step.first_trace_reported",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "記録したわ。次は霧の中に残る痕跡を探してみて。"
+      }
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.marsh_patrol_offer",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 500,
+    "condition": {
+      "required_flags": [
+        "flag.ch02.first_trace_complete"
+      ],
+      "excluded_flags": [
+        "flag.quest.accepted:quest.ch02.marsh_patrol",
+        "flag.ch02.marsh_patrol_complete",
+        "flag.field_event.ch02.mist_trace_collected"
+      ]
+    },
+    "lines": [],
+    "steps": [
+      {
+        "step_id": "step.marsh_patrol_offer",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "湿原の灯蛾が増えているの。急ぎではないけれど、探索路を守るなら数を減らしてほしい。",
+        "choices": [
+          {
+            "choice_id": "choice.marsh_patrol_accept",
+            "text": "灯蛾の討伐も引き受ける",
+            "next_step_id": "step.marsh_patrol_after_accept",
+            "effects": [
+              {
+                "action_type": "accept_quest",
+                "params": {
+                  "quest_id": "quest.ch02.marsh_patrol"
+                }
+              }
+            ]
+          },
+          {
+            "choice_id": "choice.marsh_patrol_later",
+            "text": "今は痕跡調査を優先する",
+            "next_step_id": "step.marsh_patrol_later",
+            "effects": [
+              {
+                "action_type": "end_dialogue",
+                "params": {}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "step_id": "step.marsh_patrol_after_accept",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "無理はしないで。依頼が受注できていれば、灯蛾を二体確認すれば十分よ。"
+      },
+      {
+        "step_id": "step.marsh_patrol_later",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "それでいいわ。灯蛾の依頼はクエストボードからでも受けられる。"
+      }
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.marsh_patrol_progress",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 510,
+    "condition": {
+      "required_quest_status": {
+        "quest.ch02.marsh_patrol": "in_progress"
+      }
+    },
+    "lines": [
+      "灯蛾は霧の光に集まる。まとまって飛んでいる群れを狙うといい。"
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.marsh_patrol_ready",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 520,
+    "condition": {
+      "required_quest_status": {
+        "quest.ch02.marsh_patrol": "ready_to_complete"
+      }
+    },
+    "lines": [],
+    "steps": [
+      {
+        "step_id": "step.marsh_patrol_report",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "灯蛾の群れを払えたのね。巡回記録に残しておくわ。",
+        "choices": [
+          {
+            "choice_id": "choice.marsh_patrol_report",
+            "text": "討伐結果を報告する",
+            "next_step_id": "step.marsh_patrol_reported",
+            "effects": [
+              {
+                "action_type": "report_quest",
+                "params": {
+                  "quest_id": "quest.ch02.marsh_patrol"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "step_id": "step.marsh_patrol_reported",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "助かったわ。これで湿原の探索路は少し安定する。"
+      }
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.mist_trace_offer",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 650,
+    "condition": {
+      "required_flags": [
+        "flag.ch02.first_trace_complete",
+        "flag.field_event.ch02.mist_trace_collected"
+      ],
+      "excluded_flags": [
+        "flag.quest.accepted:quest.ch02.mist_trace_delivery",
+        "flag.ch02.mist_trace_delivered"
+      ]
+    },
+    "lines": [],
+    "steps": [
+      {
+        "step_id": "step.mist_trace_offer",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "その記憶片、霧の痕から回収したものね。二つ揃っているなら解析したい。預けてくれる？",
+        "choices": [
+          {
+            "choice_id": "choice.mist_trace_accept",
+            "text": "解析依頼を受ける",
+            "next_step_id": "step.mist_trace_after_accept",
+            "effects": [
+              {
+                "action_type": "accept_quest",
+                "params": {
+                  "quest_id": "quest.ch02.mist_trace_delivery"
+                }
+              }
+            ]
+          },
+          {
+            "choice_id": "choice.mist_trace_later",
+            "text": "まだ手元に置いておく",
+            "next_step_id": "step.mist_trace_later",
+            "effects": [
+              {
+                "action_type": "end_dialogue",
+                "params": {}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "step_id": "step.mist_trace_after_accept",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "依頼が受注できていれば、この場で記憶片を渡せるわ。もう一度話しかけて。"
+      },
+      {
+        "step_id": "step.mist_trace_later",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "わかった。失くさないように気をつけて。"
+      }
+    ]
+  },
+  {
+    "entry_id": "dialogue.ch02.fog_keeper.mist_trace_progress",
+    "npc_id": "npc.ch02.fog_keeper",
+    "priority": 660,
+    "condition": {
+      "required_quest_status": {
+        "quest.ch02.mist_trace_delivery": "in_progress"
+      }
+    },
+    "lines": [],
+    "steps": [
+      {
+        "step_id": "step.mist_trace_turn_in",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "解析には記憶片が二つ必要よ。手元にあるなら受け取る。",
+        "choices": [
+          {
+            "choice_id": "choice.mist_trace_turn_in",
+            "text": "記憶片を2個渡す",
+            "next_step_id": "step.mist_trace_turn_in_after",
+            "effects": [
+              {
+                "action_type": "turn_in_quest",
+                "params": {
+                  "quest_id": "quest.ch02.mist_trace_delivery",
+                  "auto_complete": "true"
+                }
+              }
+            ]
+          },
+          {
+            "choice_id": "choice.mist_trace_not_yet",
+            "text": "まだ渡さない",
+            "next_step_id": "step.mist_trace_not_yet",
+            "effects": [
+              {
+                "action_type": "end_dialogue",
+                "params": {}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "step_id": "step.mist_trace_turn_in_after",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "受領結果はクエスト一覧で確認して。足りなければ、もう一度痕跡を探しましょう。"
+      },
+      {
+        "step_id": "step.mist_trace_not_yet",
+        "speaker": "npc.ch02.fog_keeper",
+        "line": "了解。解析する時はここへ持ってきて。"
+      }
+    ]
   }
 ]
