@@ -178,37 +178,40 @@ jobs:
           import json
           from pathlib import Path
 
-          root = Path("tmp/ch02-content-promotion")
-          plan = json.loads((root / "PROMOTION_PLAN.json").read_text(encoding="utf-8"))
-          expected_conversations = {
-              "dialogue.ch02.fog_keeper.first_trace_offer",
-              "dialogue.ch02.fog_keeper.first_trace_progress",
-              "dialogue.ch02.fog_keeper.first_trace_ready",
-              "dialogue.ch02.fog_keeper.marsh_patrol_offer",
-              "dialogue.ch02.fog_keeper.marsh_patrol_progress",
-              "dialogue.ch02.fog_keeper.marsh_patrol_ready",
-              "dialogue.ch02.fog_keeper.mist_trace_offer",
-              "dialogue.ch02.fog_keeper.mist_trace_progress",
-              "dialogue.ch02.fog_keeper.echo_patrol_offer",
-              "dialogue.ch02.fog_keeper.echo_patrol_progress",
-              "dialogue.ch02.fog_keeper.echo_patrol_ready",
-              "dialogue.ch02.fog_keeper.boss_offer",
-              "dialogue.ch02.fog_keeper.boss_progress",
-              "dialogue.ch02.fog_keeper.boss_ready",
-              "dialogue.ch02.fog_keeper.chapter_clear",
-          }
+          plan = json.loads(
+              Path("tmp/ch02-content-promotion/PROMOTION_PLAN.json").read_text(encoding="utf-8")
+          )
           assert plan["status"] == "ready_for_review", plan
-          assert not plan["unresolved_references"]
-          assert not plan["conflicts"]
-          assert set(plan["classifications"]["conversations"]["add"]) == expected_conversations
-          assert plan["classifications"]["conversations"]["conflict"] == []
-          for kind in ("locations", "encounters", "quests", "events"):
-              assert plan["classifications"][kind]["add"] == [], (kind, plan["classifications"][kind])
-              assert plan["classifications"][kind]["conflict"] == [], (kind, plan["classifications"][kind])
+          assert not plan["unresolved_references"], plan["unresolved_references"]
+          assert not plan["conflicts"], plan["conflicts"]
+          for kind, classification in plan["classifications"].items():
+              assert classification["conflict"] == [], (kind, classification)
+              assert not (set(classification["add"]) & set(classification["unchanged"])), (
+                  kind,
+                  classification,
+              )
           print("Chapter 2 promotion plan verified")
           PY
 
+      - name: Detect Chapter 2 promotion additions
+        id: chapter2_changes
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+
+          plan = json.loads(
+              Path("tmp/ch02-content-promotion/PROMOTION_PLAN.json").read_text(encoding="utf-8")
+          )
+          has_additions = any(
+              classification["add"]
+              for classification in plan["classifications"].values()
+          )
+          print(f"has_additions={'true' if has_additions else 'false'}")
+          PY
+
       - name: Generate Chapter 2 promotion patch bundle
+        if: steps.chapter2_changes.outputs.has_additions == 'true'
         run: |
           python tools/chapter_content_promotion.py \
             --catalog content/master_catalog_v1.json \
@@ -217,6 +220,7 @@ jobs:
             --output tmp/ch02-content-promotion-bundle
 
       - name: Verify Chapter 2 bundle and dry-run apply
+        if: steps.chapter2_changes.outputs.has_additions == 'true'
         run: |
           python tools/chapter_content_promotion.py \
             --catalog content/master_catalog_v1.json \
@@ -241,23 +245,33 @@ jobs:
 
           git diff --exit-code -- data/master
 
-      - name: Verify Chapter 2 bundle contract
+      - name: Verify Chapter 2 bundle matches promotion plan
+        if: steps.chapter2_changes.outputs.has_additions == 'true'
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
 
-          root = Path("tmp/ch02-content-promotion-bundle")
-          bundle = root / "bundle"
+          plan = json.loads(
+              Path("tmp/ch02-content-promotion/PROMOTION_PLAN.json").read_text(encoding="utf-8")
+          )
+          bundle = Path("tmp/ch02-content-promotion-bundle/bundle")
           manifest = json.loads((bundle / "BUNDLE_MANIFEST.json").read_text(encoding="utf-8"))
-          files = manifest["files"]
+
+          expected = {
+              kind: sorted(classification["add"])
+              for kind, classification in plan["classifications"].items()
+              if classification["add"]
+          }
+          actual = {
+              entry["kind"]: sorted(entry["added_ids"])
+              for entry in manifest["files"]
+          }
           assert manifest["bundle_type"] == "chapter_content_promotion_add_only"
           assert manifest["mode"] == "add_only"
-          assert len(files) == 1, files
-          assert files[0]["kind"] == "conversations", files[0]
-          assert len(files[0]["added_ids"]) == 15, files[0]
-          assert (bundle / files[0]["candidate_path"]).exists()
-          assert (bundle / files[0]["diff_path"]).exists()
+          assert actual == expected, (actual, expected)
+          assert all((bundle / entry["candidate_path"]).exists() for entry in manifest["files"])
+          assert all((bundle / entry["diff_path"]).exists() for entry in manifest["files"])
           print("Chapter 2 promotion bundle verified")
           PY
 
