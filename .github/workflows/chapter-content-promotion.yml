@@ -254,7 +254,7 @@ jobs:
           assert manifest["bundle_type"] == "chapter_content_promotion_add_only"
           assert manifest["mode"] == "add_only"
           assert len(files) == 1, files
-          assert files[0]["collection"] == "conversations", files[0]
+          assert files[0]["kind"] == "conversations", files[0]
           assert len(files[0]["added_ids"]) == 15, files[0]
           assert (bundle / files[0]["candidate_path"]).exists()
           assert (bundle / files[0]["diff_path"]).exists()
@@ -262,6 +262,7 @@ jobs:
           PY
 
       - name: Upload promotion review artifacts
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: chapter-content-promotion-${{ github.sha }}
@@ -270,5 +271,5 @@ jobs:
             tmp/chapter-content-promotion-bundle
             tmp/ch02-content-promotion
             tmp/ch02-content-promotion-bundle
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
