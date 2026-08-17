@@ -77,5 +77,74 @@
         }
       }
     ]
+  },
+  {
+    "id": "event.ch02.opening",
+    "event_id": "event.ch02.opening",
+    "title": "霧港への航路",
+    "scene_id": "scene.ch02.mist_harbor",
+    "next_event_ids": [],
+    "steps": [
+      {
+        "id": "step.ch02.opening.001",
+        "speaker": "npc.astel.elder",
+        "line": "潮門の脅威が消えた。北方の霧港へ向かう船を出せるようになったぞ。"
+      },
+      {
+        "id": "step.ch02.opening.002",
+        "action": {
+          "type": "set_flag",
+          "params": {
+            "flag_id": "flag.ch02.access_granted"
+          }
+        }
+      },
+      {
+        "id": "step.ch02.opening.003",
+        "action": {
+          "type": "end_event",
+          "params": {}
+        }
+      }
+    ]
+  },
+  {
+    "id": "event.ch02.fog_behemoth_awakening",
+    "event_id": "event.ch02.fog_behemoth_awakening",
+    "title": "霧喰らいの咆哮",
+    "scene_id": "scene.ch02.echoing_bastion",
+    "next_event_ids": [],
+    "steps": [
+      {
+        "id": "step.ch02.boss.001",
+        "speaker": "char.main.rion",
+        "line": "霧そのものが脈打っている……あれが霧喰らいか。"
+      },
+      {
+        "id": "step.ch02.boss.002",
+        "action": {
+          "type": "start_battle",
+          "params": {
+            "encounter_id": "encounter.ch02.fog_behemoth_boss"
+          }
+        }
+      },
+      {
+        "id": "step.ch02.boss.003",
+        "action": {
+          "type": "set_flag",
+          "params": {
+            "flag_id": "flag.ch02.fog_behemoth_battle_seen"
+          }
+        }
+      },
+      {
+        "id": "step.ch02.boss.004",
+        "action": {
+          "type": "end_event",
+          "params": {}
+        }
+      }
+    ]
   }
 ]
