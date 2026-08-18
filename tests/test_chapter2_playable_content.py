@@ -15,6 +15,23 @@ from tools.content_promotion import evaluate_promotion, load_catalog
 MASTER_ROOT = Path("data/master")
 PACK_PATH = Path("content/packs/ch02/pack.json")
 CATALOG_PATH = Path("content/master_catalog_v1.json")
+CHAPTER2_CONVERSATION_IDS = {
+    "dialogue.ch02.fog_keeper.first_trace_offer",
+    "dialogue.ch02.fog_keeper.first_trace_progress",
+    "dialogue.ch02.fog_keeper.first_trace_ready",
+    "dialogue.ch02.fog_keeper.marsh_patrol_offer",
+    "dialogue.ch02.fog_keeper.marsh_patrol_progress",
+    "dialogue.ch02.fog_keeper.marsh_patrol_ready",
+    "dialogue.ch02.fog_keeper.mist_trace_offer",
+    "dialogue.ch02.fog_keeper.mist_trace_progress",
+    "dialogue.ch02.fog_keeper.echo_patrol_offer",
+    "dialogue.ch02.fog_keeper.echo_patrol_progress",
+    "dialogue.ch02.fog_keeper.echo_patrol_ready",
+    "dialogue.ch02.fog_keeper.boss_offer",
+    "dialogue.ch02.fog_keeper.boss_progress",
+    "dialogue.ch02.fog_keeper.boss_ready",
+    "dialogue.ch02.fog_keeper.chapter_clear",
+}
 
 
 class Chapter2PlayableContentTest(unittest.TestCase):
@@ -28,7 +45,11 @@ class Chapter2PlayableContentTest(unittest.TestCase):
         self.assertEqual(result.counts["encounters"], 4)
         self.assertEqual(result.counts["quests"], 5)
         self.assertEqual(result.counts["events"], 2)
-        self.assertEqual(result.counts["conversations"], 0)
+        self.assertEqual(result.counts["conversations"], 15)
+        self.assertEqual(
+            {row["entry_id"] for row in self.pack["content"]["conversations"]},
+            CHAPTER2_CONVERSATION_IDS,
+        )
 
         evaluation = evaluate_promotion(
             self.pack,
@@ -44,13 +65,19 @@ class Chapter2PlayableContentTest(unittest.TestCase):
             "encounters": 4,
             "quests": 5,
             "events": 2,
-            "conversations": 0,
         }
         for kind, count in expected_unchanged.items():
             classification = evaluation.plan["classifications"][kind]
             self.assertEqual(classification["add"], [])
             self.assertEqual(classification["conflict"], [])
             self.assertEqual(len(classification["unchanged"]), count)
+
+        conversation_classification = evaluation.plan["classifications"]["conversations"]
+        self.assertEqual(conversation_classification["conflict"], [])
+        added = set(conversation_classification["add"])
+        unchanged = set(conversation_classification["unchanged"])
+        self.assertFalse(added & unchanged)
+        self.assertEqual(added | unchanged, CHAPTER2_CONVERSATION_IDS)
 
     def test_chapter2_encounters_load_with_expected_rosters(self) -> None:
         repository = MasterDataRepository(MASTER_ROOT)
