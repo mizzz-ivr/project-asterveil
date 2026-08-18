@@ -1,0 +1,215 @@
+name: Chapter 2 Quest Board Progression Temporary
+
+on:
+  push:
+    branches:
+      - feature/ch02-quest-board-progression
+    paths:
+      - '.github/workflows/ch02-quest-board-progression-temp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  align-progression:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/ch02-quest-board-progression
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Align Chapter 2 quest availability and tests
+        run: |
+          set -Eeuo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file_path = Path(path)
+              text = file_path.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one replacement target, found {count}')
+              file_path.write_text(text.replace(old, new), encoding='utf-8')
+
+          replace_once(
+              'content/packs/ch02/pack.json',
+              '''          "required_quest_ids": [
+            "quest.ch02.first_trace"
+          ],
+          "required_flags": [
+            "flag.field_event.ch02.mist_trace_collected"
+          ],
+          "min_level": 9''',
+              '''          "required_quest_ids": [
+            "quest.ch02.mist_trace_delivery"
+          ],
+          "required_flags": [
+            "flag.ch02.mist_trace_delivered"
+          ],
+          "min_level": 9''',
+          )
+
+          replace_once(
+              'data/master/quests.sample.json',
+              '''      "required_quest_ids": [
+        "quest.ch02.first_trace"
+      ],
+      "required_flags": [
+        "flag.field_event.ch02.mist_trace_collected"
+      ],
+      "min_level": 9''',
+              '''      "required_quest_ids": [
+        "quest.ch02.mist_trace_delivery"
+      ],
+      "required_flags": [
+        "flag.ch02.mist_trace_delivered"
+      ],
+      "min_level": 9''',
+          )
+
+          replace_once(
+              'tests/test_chapter2_playable_content.py',
+              '''        self.assertIn("quest.ch02.first_trace", echo_patrol.availability.required_quest_ids)
+        self.assertIn(
+            "flag.field_event.ch02.mist_trace_collected",
+            echo_patrol.availability.required_flags,
+        )''',
+              '''        self.assertIn(
+            "quest.ch02.mist_trace_delivery",
+            echo_patrol.availability.required_quest_ids,
+        )
+        self.assertIn(
+            "flag.ch02.mist_trace_delivered",
+            echo_patrol.availability.required_flags,
+        )
+        self.assertNotIn(
+            "quest.ch02.first_trace",
+            echo_patrol.availability.required_quest_ids,
+        )
+        self.assertNotIn(
+            "flag.field_event.ch02.mist_trace_collected",
+            echo_patrol.availability.required_flags,
+        )''',
+          )
+
+          replace_once(
+              'tests/test_chapter2_dialogue_flow.py',
+              '''    def _set_ready_quest(self, app: PlayableSliceApplication, quest_id: str) -> None:
+        state = app.quest_session.quest_service.create_initial_state(quest_id)
+        state.status = QuestStatus.READY_TO_COMPLETE
+        app.quest_session.quest_states[quest_id] = state
+        app.quest_session.world_flags.add(f"flag.quest.accepted:{quest_id}")
+
+    def test_master_loads_all_fog_keeper_chapter2_entries(self) -> None:''',
+              '''    def _set_ready_quest(self, app: PlayableSliceApplication, quest_id: str) -> None:
+        state = app.quest_session.quest_service.create_initial_state(quest_id)
+        state.status = QuestStatus.READY_TO_COMPLETE
+        app.quest_session.quest_states[quest_id] = state
+        app.quest_session.world_flags.add(f"flag.quest.accepted:{quest_id}")
+
+    def _quest_board_entry_line(
+        self,
+        app: PlayableSliceApplication,
+        quest_id: str,
+    ) -> str:
+        prefix = f"quest_board_entry:{quest_id}:"
+        return next(line for line in app.quest_board_lines() if line.startswith(prefix))
+
+    def test_master_loads_all_fog_keeper_chapter2_entries(self) -> None:''',
+          )
+
+          replace_once(
+              'tests/test_chapter2_dialogue_flow.py',
+              '''            facade = PlayableInteractionFacade(app)
+
+            offer = facade.start_dialogue(FOG_KEEPER_ID)
+            self.assertEqual(
+                offer.entry_id,
+                "dialogue.ch02.fog_keeper.mist_trace_offer",
+            )''',
+              '''            facade = PlayableInteractionFacade(app)
+
+            locked_before_delivery = self._quest_board_entry_line(
+                app,
+                "quest.ch02.echo_patrol",
+            )
+            self.assertIn("status=locked", locked_before_delivery)
+            self.assertIn("can_accept=False", locked_before_delivery)
+
+            offer = facade.start_dialogue(FOG_KEEPER_ID)
+            self.assertEqual(
+                offer.entry_id,
+                "dialogue.ch02.fog_keeper.mist_trace_offer",
+            )''',
+          )
+
+          replace_once(
+              'tests/test_chapter2_dialogue_flow.py',
+              '''            self.assertEqual(
+                app.inventory_state["items"].get("item.material.memory_shard", 0),
+                0,
+            )
+
+            next_offer = facade.start_dialogue(FOG_KEEPER_ID)''',
+              '''            self.assertEqual(
+                app.inventory_state["items"].get("item.material.memory_shard", 0),
+                0,
+            )
+
+            available_after_delivery = self._quest_board_entry_line(
+                app,
+                "quest.ch02.echo_patrol",
+            )
+            self.assertIn("status=available", available_after_delivery)
+            self.assertIn("can_accept=True", available_after_delivery)
+
+            next_offer = facade.start_dialogue(FOG_KEEPER_ID)''',
+          )
+          PY
+
+      - name: Run focused regression tests
+        run: |
+          set -Eeuo pipefail
+          python -m unittest \
+            tests.test_chapter2_playable_content \
+            tests.test_chapter2_dialogue_flow \
+            -v
+
+      - name: Verify minimal diff and remove temporary workflow
+        run: |
+          set -Eeuo pipefail
+          rm .github/workflows/ch02-quest-board-progression-temp.yml
+          python - <<'PY'
+          import subprocess
+
+          expected = {
+              '.github/workflows/ch02-quest-board-progression-temp.yml',
+              'content/packs/ch02/pack.json',
+              'data/master/quests.sample.json',
+              'tests/test_chapter2_playable_content.py',
+              'tests/test_chapter2_dialogue_flow.py',
+          }
+          actual = set(
+              subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
+          )
+          if actual != expected:
+              raise SystemExit(f'unexpected changed files: {sorted(actual)}')
+          PY
+
+      - name: Commit progression alignment
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Chapter 2のQuest Board解放条件を霧守セラの進行導線と統一'
+          git push origin HEAD:feature/ch02-quest-board-progression
