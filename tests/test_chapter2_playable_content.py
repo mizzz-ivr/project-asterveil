@@ -108,8 +108,19 @@ class Chapter2PlayableContentTest(unittest.TestCase):
             first_trace.availability.required_quest_ids,
         )
         self.assertIn("flag.ch02.access_granted", first_trace.availability.required_flags)
-        self.assertIn("quest.ch02.first_trace", echo_patrol.availability.required_quest_ids)
         self.assertIn(
+            "quest.ch02.mist_trace_delivery",
+            echo_patrol.availability.required_quest_ids,
+        )
+        self.assertIn(
+            "flag.ch02.mist_trace_delivered",
+            echo_patrol.availability.required_flags,
+        )
+        self.assertNotIn(
+            "quest.ch02.first_trace",
+            echo_patrol.availability.required_quest_ids,
+        )
+        self.assertNotIn(
             "flag.field_event.ch02.mist_trace_collected",
             echo_patrol.availability.required_flags,
         )
