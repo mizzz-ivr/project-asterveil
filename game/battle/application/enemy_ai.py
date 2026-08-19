@@ -104,6 +104,16 @@ class EnemyAiService:
                 if actor.hp / max(1, actor.max_hp) >= threshold:
                     return False
                 continue
+            if condition_type == "self_has_effect":
+                effect_id = str(condition.get("effect_id", ""))
+                if not any(effect.effect_id == effect_id for effect in actor.active_effects):
+                    return False
+                continue
+            if condition_type == "self_has_no_effect":
+                effect_id = str(condition.get("effect_id", ""))
+                if any(effect.effect_id == effect_id for effect in actor.active_effects):
+                    return False
+                continue
             if condition_type == "enemy_has_no_effect":
                 effect_id = str(condition.get("effect_id", ""))
                 living = self._living_enemies_of(state, actor)
