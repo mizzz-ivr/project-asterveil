@@ -234,10 +234,10 @@
         "reporting_npc_id": "npc.ch02.fog_keeper",
         "availability": {
           "required_quest_ids": [
-            "quest.ch02.first_trace"
+            "quest.ch02.mist_trace_delivery"
           ],
           "required_flags": [
-            "flag.field_event.ch02.mist_trace_collected"
+            "flag.ch02.mist_trace_delivered"
           ],
           "min_level": 9
         },
