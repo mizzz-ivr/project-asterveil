@@ -220,5 +220,51 @@
         "conditions": []
       }
     ]
+  },
+  {
+    "ai_profile_id": "enemy_ai.fog_behemoth.phase2",
+    "action_rules": [
+      {
+        "rule_id": "rule.fog_behemoth.phase2.charge",
+        "priority": 100,
+        "action_type": "skill",
+        "skill_id": "skill.enemy.fog_pressure_charge",
+        "target_rule": "self",
+        "conditions": [
+          {
+            "type": "self_has_no_effect",
+            "effect_id": "effect.buff.fog_pressure"
+          }
+        ]
+      },
+      {
+        "rule_id": "rule.fog_behemoth.phase2.maelstrom",
+        "priority": 95,
+        "action_type": "skill",
+        "skill_id": "skill.enemy.fog_maelstrom",
+        "target_rule": "random_enemy",
+        "conditions": [
+          {
+            "type": "self_has_effect",
+            "effect_id": "effect.buff.fog_pressure"
+          }
+        ]
+      },
+      {
+        "rule_id": "rule.fog_behemoth.phase2.fog_crush",
+        "priority": 70,
+        "action_type": "skill",
+        "skill_id": "skill.enemy.fog_crush",
+        "target_rule": "random_enemy",
+        "conditions": []
+      },
+      {
+        "rule_id": "rule.fog_behemoth.phase2.attack",
+        "priority": 20,
+        "action_type": "normal_attack",
+        "target_rule": "lowest_hp_enemy",
+        "conditions": []
+      }
+    ]
   }
 ]
