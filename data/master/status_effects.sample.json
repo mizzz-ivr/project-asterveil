@@ -34,5 +34,17 @@
     "clear_on_rest": true,
     "removable_by_item": false,
     "description": "攻撃力が35%上昇する。"
+  },
+  {
+    "effect_id": "effect.buff.fog_pressure",
+    "name": "霧圧集中",
+    "effect_type": "buff",
+    "target_stat": "atk",
+    "magnitude": 0.2,
+    "duration_turns": 2,
+    "application_rule": "while_active",
+    "clear_on_rest": true,
+    "removable_by_item": false,
+    "description": "霧圧を集中し、次の大技まで攻撃力が20%上昇する。"
   }
 ]
