@@ -156,7 +156,9 @@
     },
     "skill_ids": [
       "skill.enemy.fog_crush",
-      "skill.enemy.mist_fang"
+      "skill.enemy.mist_fang",
+      "skill.enemy.fog_pressure_charge",
+      "skill.enemy.fog_maelstrom"
     ],
     "weakness": {
       "elements": [
