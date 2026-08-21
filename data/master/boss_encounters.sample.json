@@ -34,5 +34,37 @@
         ]
       }
     ]
+  },
+  {
+    "encounter_id": "encounter.ch02.fog_behemoth_boss",
+    "boss_enemy_id": "enemy.ch02.fog_behemoth",
+    "phases": [
+      {
+        "phase_id": "phase.fog_behemoth.hunting",
+        "display_name": "霧喰らい・徘徊",
+        "ai_profile_id": "enemy_ai.fog_behemoth.phase1",
+        "on_enter_events": [
+          {
+            "event_type": "show_message",
+            "message": "霧喰らいが低く身を伏せ、砦の霧を吸い込み始めた。"
+          }
+        ]
+      },
+      {
+        "phase_id": "phase.fog_behemoth.pressure_storm",
+        "display_name": "霧喰らい・霧圧暴走",
+        "enter_condition": {
+          "type": "hp_ratio_below",
+          "value": 0.6
+        },
+        "ai_profile_id": "enemy_ai.fog_behemoth.phase2",
+        "on_enter_events": [
+          {
+            "event_type": "show_message",
+            "message": "霧圧が一点へ収束する。霧喰らいの大技に備えろ！"
+          }
+        ]
+      }
+    ]
   }
 ]

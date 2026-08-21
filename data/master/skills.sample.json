@@ -315,5 +315,43 @@
     "weight": 22,
     "break_power": 18,
     "precast_warning": true
+  },
+  {
+    "id": "skill.enemy.fog_pressure_charge",
+    "target_type": "single",
+    "target_scope": "single_ally",
+    "effect_kind": "apply_effect",
+    "cost": {
+      "sp": 8,
+      "cooldown": 0
+    },
+    "effect_blocks": [
+      {
+        "type": "apply_effect",
+        "effect_id": "effect.buff.fog_pressure"
+      }
+    ],
+    "weight": 10,
+    "break_power": 0,
+    "precast_warning": true
+  },
+  {
+    "id": "skill.enemy.fog_maelstrom",
+    "target_type": "all",
+    "target_scope": "all_enemies",
+    "cost": {
+      "sp": 22,
+      "cooldown": 0
+    },
+    "effect_blocks": [
+      {
+        "type": "damage",
+        "element": "water",
+        "power": 1.35
+      }
+    ],
+    "weight": 28,
+    "break_power": 22,
+    "precast_warning": false
   }
 ]
